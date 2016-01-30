@@ -1,48 +1,23 @@
-import requests, json, urllib2, urllib
-import datetime, ast, sys
-import pprint, itertools
+import requests, json
 
-BASE_URL = 'http://api.sportsdatabase.com/nba/query.json?sdql='
-API_KEY = 'guest'
+def getData(season, playerOrTeam="P"):
+    requrl="http://stats.nba.com/stats/leaguegamelog?Direction=DESC&LeagueID=00&PlayerOrTeam=%s&Season=%s&SeasonType=Regular+Season&Sorter=PTS" % (playerOrTeam, season)
+    headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36"}
+    req = requests.get(requrl, headers=headers, timeout=30)
+    return req.json()
 
-def getGames(params, season):
-    today = datetime.datetime.now().strftime("%Y%m%d")
-    requrl = "%s%s@season=%i&date<=%s&output=json&api_key=%s" % (BASE_URL, params, season,today,API_KEY)
-    req = requests.get(requrl)
-    data = req.content[14:-3]
-    js = ast.literal_eval(data)
-    headers = js["headers"]
-    maindata = js["groups"][0]["columns"]
-
-    games = []
-    for irow in range(len(maindata[0])):
-        d = { headers[icol] : maindata[icol][irow] for icol in range(len(headers)) }
-        d["season"] = season
-        games.append(d)
-    
-    return games
-
-if __name__ == '__main__':
-    mainparams = []
-    single = ["playoffs", "minutes", "lead changes", "month", "officials", "total", "time of game", "overtime", "season", "times tied", "date", "ou margin", "day"]
-    both = ["assists", "ats margin", "ats streak", "biggest lead", "blocks", "conference", "date", "day", "defensive rebounds", "division", "dpa", "dps", "fast break points", "field goals attempted", "field goals made", "fouls", "free throws attempted", "free throws made", "game number", "lead changes", "line", "losses", "margin", "margin after the first", "margin after the third", "margin at the half", "matchup losses", "matchup wins", "minutes", "month", "offensive rebounds", "officials", "season", "rebounds", "site", "ou margin", "ou streak", "overtime", "playoffs", "points", "points in the paint", "quarter scores", "turnovers", "wins", "three pointers attempted", "three pointers made", "time of game", "times tied", "total", "site streak", "steals", "streak", "team", "team rebounds"]
-
-    mainparams.extend( single )
-    mainparams.extend( map(lambda x: "".join(list(x)), list(itertools.product(["o:","t:"],both))) )
-    mainparams = ",".join(mainparams)
-
-    print "[scrape] Fetching parameters: %s" % mainparams
-
-    seasons = range(2015, 2001, -1)
-
-    with open("../data/out.txt", "w") as fhout:
-        for season in seasons:
+if __name__=='__main__':
+    for year in range(2000,2016):
+        season = "%s-%s" % (str(year), str(year+1)[-2:])
+        for pt in ["P", "T"]:
             try:
-                games = getGames(mainparams, season)
-                print "[scrape] got games for season %i" % season
+                data = getData(season, playerOrTeam=pt)
+                outname = "../data/json/data_%s_%i.json" % (pt, year)
+                with open(outname,"w") as fh:
+                    json.dump(data, fh)
+                print "[scraper] Got %s data for %s" % ("player" if pt == "P" else "team", season)
             except:
-                print "[scrape] ERROR getting games for season %i" % season
-                continue
+                print "[scraper] ERROR getting %s data for %s" % ("player" if pt == "P" else "team", season)
 
-            for game in games:
-                fhout.write(str(game) + "\n")
+
+
