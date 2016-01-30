@@ -8,9 +8,10 @@ np.set_printoptions(linewidth=205,formatter={'float_kind':lambda x: "%.1f" % x }
 
 class Games:
 
-    def __init__(self, years=[2014]):
+    def __init__(self, years=[2014], debug=False):
 
         self.years = years
+        self.debug = debug
 
         self.info = {}
         self.team_info = {}
@@ -51,7 +52,7 @@ class Games:
                 tid = int(team[tcol["TEAM_ID"]])
                 self.team_info[year][tid] = {}
                 self.team_info[year][tid]["team_abbreviation"] = team[tcol["TEAM_ABBREVIATION"]]
-                self.team_info[year][tid]["team_name"] = team[tcol["TEAM_NAME"]]
+                self.team_info[year][tid]["name"] = team[tcol["TEAM_NAME"]]
                 self.team_info[year][tid]["opponents"] = []
                 self.team_info[year][tid]["games"] = []
                 self.team_info[year][tid]["players"] = []
@@ -60,16 +61,19 @@ class Games:
             for player in g_data:
                 pid = int(player[gcol["PLAYER_ID"]])
                 self.player_info[year][pid] = {}
-                self.player_info[year][pid]["player_name"] = player[gcol["PLAYER_NAME"]]
+                self.player_info[year][pid]["name"] = player[gcol["PLAYER_NAME"]]
                 self.player_info[year][pid]["team"] = int(player[gcol["TEAM_ID"]])
+                self.player_info[year][pid]["age"] = int(float(player[gcol["AGE"]]))
                 self.player_info[year][pid]["games"] = []
 
             self.info["data"][year] = {}
 
             gameids = np.unique(t_data[:, tcol["GAME_ID"]]).astype('int')
-            # for gid in tqdm(gameids):
-            for gid in tqdm(gameids[:15]):
+            # for igid,gid in enumerate(gameids):
             # for gid in ["0021400001"]:
+            for igid,gid in tqdm(enumerate(gameids)):
+
+                if self.debug and igid > 15: break
 
                 # FIXME THIS CAN BE MUCH FASTER
                 players = p_data[ p_data[:, pcol["GAME_ID"]].astype('int')==gid ] 
@@ -94,14 +98,14 @@ class Games:
                 self.team_info[year][tid2]["opponents"].append(tid1)
                 self.team_info[year][tid1]["games"].append(gid)
                 self.team_info[year][tid2]["games"].append(gid)
-                self.team_info[year][tid1]["players"].extend( list(players[players[:,pcol["TEAM_NAME"]]==self.team_info[year][tid1]["team_name"]][:,pcol["PLAYER_ID"]]) )
-                self.team_info[year][tid2]["players"].extend( list(players[players[:,pcol["TEAM_NAME"]]==self.team_info[year][tid2]["team_name"]][:,pcol["PLAYER_ID"]]) )
+                self.team_info[year][tid1]["players"].extend( list(players[players[:,pcol["TEAM_NAME"]]==self.team_info[year][tid1]["name"]][:,pcol["PLAYER_ID"]]) )
+                self.team_info[year][tid2]["players"].extend( list(players[players[:,pcol["TEAM_NAME"]]==self.team_info[year][tid2]["name"]][:,pcol["PLAYER_ID"]]) )
 
                 players = np.delete(players, p_toremove, axis=1)
                 teams = np.delete(teams, t_toremove, axis=1)
                 self.info["data"][year][gid] = {}
-                self.info["data"][year][gid]["home_t"] = teams[t_ishome == True].astype('float')
-                self.info["data"][year][gid]["opp_t"] =  teams[t_ishome == False].astype('float')
+                self.info["data"][year][gid]["home_t"] = teams[t_ishome == True].astype('float')[0]
+                self.info["data"][year][gid]["opp_t"] =  teams[t_ishome == False].astype('float')[0]
                 self.info["data"][year][gid]["home_p"] = players[p_ishome == True].astype('float')
                 self.info["data"][year][gid]["opp_p"] =  players[p_ishome == False].astype('float')
 
@@ -115,8 +119,8 @@ class Games:
                 t_colnames = [cn for cn in t_colnames if cn not in t_colremove]
 
                 self.info["headers"] = {}
-                self.info["headers"]["t"] = p_colnames
-                self.info["headers"]["p"] = t_colnames
+                self.info["headers"]["t"] = t_colnames
+                self.info["headers"]["p"] = p_colnames
 
 
     def load_season_json(self, year, ptg):
@@ -127,6 +131,12 @@ class Games:
         colnames = data['resultSets'][0]['headers']
         rows = data['resultSets'][0]['rowSet']
         return colnames,rows
+
+    def collapse(self, inp):
+        if len(self.years) == 1:
+            if type(inp) is list and len(inp) > 0:
+                return inp[0]
+        return inp
 
     # getters
     def get_game_ids(self, years=[]):
@@ -142,10 +152,21 @@ class Games:
             return np.unique([self.team_info[y].keys() for y in years if y in self.team_info.keys()])
 
     def get_game_by_id(self, theid):
+        game = None
         for y in self.info["data"].keys():
             if theid in self.info["data"][y].keys():
-                return self.info["data"][y][theid]
-        return None
+                game = self.info["data"][y][theid]
+        if game == None: return game
+
+        tcols = self.info["headers"]["t"]
+        pcols = self.info["headers"]["p"]
+
+        game["home_t"] = np.array([tuple(game["home_t"])], dtype=[(str(col), np.float) for col in tcols])
+        game["opp_t"] = np.array([tuple(game["opp_t"])], dtype=[(str(col), np.float) for col in tcols])
+        game["home_p"] = np.array([tuple(p) for p in game["home_p"]], dtype=[(str(col), np.float) for col in pcols])
+        game["opp_p"] = np.array([tuple(p) for p in game["opp_p"]], dtype=[(str(col), np.float) for col in pcols])
+
+        return game
 
     def get_player_ids(self, years=[]):
         if len(years) < 1:
@@ -159,7 +180,7 @@ class Games:
             if len(years) > 0 and y not in years: continue
             if theid in self.player_info[y].keys():
                 pyears.append( self.player_info[y][theid] )
-        return pyears
+        return self.collapse(pyears)
 
     def get_games_from_player_id(self, pid, years=[]):
         gameids = []
@@ -167,7 +188,7 @@ class Games:
             if len(years) > 0 and y not in years: continue
             if pid in self.player_info[y].keys():
                 gameids.extend( list(self.player_info[y][pid]["games"]) )
-        return gameids
+        return self.collapse(gameids)
 
     def get_team_roster(self, tid, years=[]):
         rosters = []
@@ -175,7 +196,7 @@ class Games:
             if len(years) > 0 and y not in years: continue
             if tid in self.team_info[y].keys():
                 rosters.append( list(self.team_info[y][tid]["players"]) )
-        return rosters
+        return self.collapse(rosters)
 
     def get_team_games(self, tid, years=[]):
         rosters = []
@@ -183,7 +204,7 @@ class Games:
             if len(years) > 0 and y not in years: continue
             if tid in self.team_info[y].keys():
                 rosters.append( list(self.team_info[y][tid]["games"]) )
-        return rosters
+        return self.collapse(rosters)
 
     def get_team_opponents(self, tid, years=[]):
         rosters = []
@@ -191,13 +212,22 @@ class Games:
             if len(years) > 0 and y not in years: continue
             if tid in self.team_info[y].keys():
                 rosters.append( list(self.team_info[y][tid]["opponents"]) )
-        return rosters
+        return self.collapse(rosters)
+    
+    def get_player_column_names(self):
+        return self.info["headers"]["p"]
+
+    def get_game_column_names(self):
+        return self.info["headers"]["t"]
+
+
 
 
 if __name__=='__main__':
     # g = Games(years=[2010,2011,2012,2013,2014])
-    g = Games(years=[2014])
+    g = Games(years=[2014], debug=True)
 
+    # # Some basic function calls
     # print g.get_game_ids(years=[2014])
     # print g.get_game_by_id(21400002)
     # print g.get_player_ids(years=[2014])
@@ -207,4 +237,19 @@ if __name__=='__main__':
     # print g.get_team_roster(1610612743)
     # print g.get_team_games(1610612743)
     # print g.get_team_opponents(1610612743)
+    # print g.get_player_column_names()
+    # print g.get_game_column_names()
 
+
+    # # Get the team roster given a player
+    # teamid = g.get_player_by_id(201167)["team"]
+    # for pid in g.get_team_roster(teamid):
+    #     print g.get_player_by_id(pid)["name"],
+    #     print g.get_player_by_id(pid)["age"]
+
+    # # Slightly more complicated: how often do home teams win?
+    # wl = []
+    # for gid in g.get_game_ids():
+    #     game = g.get_game_by_id(gid)
+    #     wl.append( game["home_t"]["WL"] )
+    # print "Home teams win %.1f%% of the time" % (100.0*np.mean(wl))
