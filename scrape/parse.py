@@ -1,9 +1,10 @@
-import json
-from pprint import pprint
+import json, sys
 import numpy as np
+sys.path.insert(0,"../")
+import utils.utils as u
 
 year = 2014
-season = "%s-%s" % (str(year), str(year+1)[-2:])
+season = u.yearToSeason(year)
 pt = "P"
 
 filename = "../data/json/data_%s_%i.json" % (pt, year)

@@ -1,4 +1,6 @@
-import requests, json
+import requests, json, sys
+sys.path.insert(0,"../")
+import utils.utils as u
 
 def getData(season, playerOrTeam="P"):
     requrl="http://stats.nba.com/stats/leaguegamelog?Direction=DESC&LeagueID=00&PlayerOrTeam=%s&Season=%s&SeasonType=Regular+Season&Sorter=PTS" % (playerOrTeam, season)
@@ -7,8 +9,9 @@ def getData(season, playerOrTeam="P"):
     return req.json()
 
 if __name__=='__main__':
+
     for year in range(2000,2016):
-        season = "%s-%s" % (str(year), str(year+1)[-2:])
+        season = u.yearToSeason(year)
         for pt in ["P", "T"]:
             try:
                 data = getData(season, playerOrTeam=pt)
