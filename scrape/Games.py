@@ -1,5 +1,6 @@
 import json, sys, time
 import numpy as np
+import pickle, gzip
 from tqdm import tqdm
 sys.path.insert(0,"../")
 import utils.utils as u
@@ -18,6 +19,20 @@ class Games:
         self.player_info = {}
 
         self.combine_data()
+        # self.pickle_data()
+        # self.unpickle_data()
+
+    def pickle_data(self, outfile="../data/pickle.pkl"):
+        # with gzip.open(outfile,"wb") as fh:
+        with open(outfile,"wb") as fh:
+            pickle.dump([self.years, self.info, self.team_info, self.player_info], fh)
+        print "Pickled years %s into %s" % (",".join(map(str,self.years)), outfile)
+
+    def unpickle_data(self, infile="../data/pickle.pkl"):
+        # with gzip.open(infile,"rb") as fh:
+        with open(infile,"rb") as fh:
+            self.years, self.info, self.team_info, self.player_info = pickle.load(fh)
+        print "Unpickled years %s from %s" % (",".join(map(str,self.years)), infile)
 
 
     def combine_data(self):
@@ -69,15 +84,23 @@ class Games:
             self.info["data"][year] = {}
 
             gameids = np.unique(t_data[:, tcol["GAME_ID"]]).astype('int')
-            # for igid,gid in enumerate(gameids):
+            p_gidLUT = { int(gid): [] for gid in gameids }
+            t_gidLUT = { int(gid): [] for gid in gameids }
+            for p in p_data:
+                gid = int(p[pcol["GAME_ID"]])
+                p_gidLUT[gid].append(p)
+            for t in t_data:
+                gid = int(t[tcol["GAME_ID"]])
+                t_gidLUT[gid].append(t)
+
             # for gid in ["0021400001"]:
+            # for igid,gid in enumerate(gameids):
             for igid,gid in tqdm(enumerate(gameids)):
 
-                if self.debug and igid > 15: break
+                if self.debug and igid > 175: break
 
-                # FIXME THIS CAN BE MUCH FASTER
-                players = p_data[ p_data[:, pcol["GAME_ID"]].astype('int')==gid ] 
-                teams = t_data[ t_data[:, tcol["GAME_ID"]].astype('int')==gid ] 
+                players = np.array(p_gidLUT[gid])
+                teams = np.array(t_gidLUT[gid])
 
                 WL = teams[:,tcol["WL"]]
                 if WL[0] is None: continue # NBA sucks balls and cancels some games. in this case, WL is None
@@ -109,7 +132,6 @@ class Games:
                 self.info["data"][year][gid]["home_p"] = players[p_ishome == True].astype('float')
                 self.info["data"][year][gid]["opp_p"] =  players[p_ishome == False].astype('float')
 
-
             # remove duplicates since we blindly extended player list many times above
             for tid in self.team_info[year].keys():
                 self.team_info[year][tid]["players"] = list(np.unique(np.array(self.team_info[year][tid]["players"])))
@@ -138,12 +160,21 @@ class Games:
                 return inp[0]
         return inp
 
-    # getters
-    def get_game_ids(self, years=[]):
+    def order_game_ids_by_date(self, gameids, desc=False):
+        # take advantage of the fact that ascending gameids means ascending dates
+        return sorted(gameids, reverse=desc)
+        
+
+    # GETTERS
+    def get_game_ids(self, years=[], desc=False,flatten=True):
+        toreturn = None
         if len(years) < 1:
-            return np.unique([self.info["data"][y].keys() for y in self.info["data"].keys()])
+            toreturn = np.unique([self.info["data"][y].keys() for y in self.info["data"].keys()])
         else:
-            return np.unique([self.info["data"][y].keys() for y in years if y in self.info["data"]])
+            toreturn = np.unique([self.info["data"][y].keys() for y in years if y in self.info["data"]])
+        toreturn = self.order_game_ids_by_date(toreturn, desc)
+        if flatten: return sum(toreturn, [])
+        else: return toreturn
 
     def get_team_ids(self, years=[]):
         if len(years) < 1:
@@ -151,20 +182,20 @@ class Games:
         else:
             return np.unique([self.team_info[y].keys() for y in years if y in self.team_info.keys()])
 
-    def get_game_by_id(self, theid):
+    def get_game_by_id(self, theid, recarray=True):
         game = None
         for y in self.info["data"].keys():
             if theid in self.info["data"][y].keys():
                 game = self.info["data"][y][theid]
         if game == None: return game
 
-        tcols = self.info["headers"]["t"]
-        pcols = self.info["headers"]["p"]
-
-        game["home_t"] = np.array([tuple(game["home_t"])], dtype=[(str(col), np.float) for col in tcols])
-        game["opp_t"] = np.array([tuple(game["opp_t"])], dtype=[(str(col), np.float) for col in tcols])
-        game["home_p"] = np.array([tuple(p) for p in game["home_p"]], dtype=[(str(col), np.float) for col in pcols])
-        game["opp_p"] = np.array([tuple(p) for p in game["opp_p"]], dtype=[(str(col), np.float) for col in pcols])
+        if recarray:
+            tcols = self.info["headers"]["t"]
+            pcols = self.info["headers"]["p"]
+            game["home_t"] = np.array([tuple(game["home_t"])], dtype=[(str(col), np.float) for col in tcols])
+            game["opp_t"] = np.array([tuple(game["opp_t"])], dtype=[(str(col), np.float) for col in tcols])
+            game["home_p"] = np.array([tuple(p) for p in game["home_p"]], dtype=[(str(col), np.float) for col in pcols])
+            game["opp_p"] = np.array([tuple(p) for p in game["opp_p"]], dtype=[(str(col), np.float) for col in pcols])
 
         return game
 
@@ -182,12 +213,12 @@ class Games:
                 pyears.append( self.player_info[y][theid] )
         return self.collapse(pyears)
 
-    def get_games_from_player_id(self, pid, years=[]):
+    def get_games_from_player_id(self, pid, years=[], desc=False):
         gameids = []
         for y in self.player_info.keys():
             if len(years) > 0 and y not in years: continue
             if pid in self.player_info[y].keys():
-                gameids.extend( list(self.player_info[y][pid]["games"]) )
+                gameids.append( self.order_game_ids_by_date(list(self.player_info[y][pid]["games"]),desc) )
         return self.collapse(gameids)
 
     def get_team_roster(self, tid, years=[]):
@@ -198,13 +229,13 @@ class Games:
                 rosters.append( list(self.team_info[y][tid]["players"]) )
         return self.collapse(rosters)
 
-    def get_team_games(self, tid, years=[]):
-        rosters = []
+    def get_team_games(self, tid, years=[], desc=False):
+        games = []
         for y in self.team_info.keys():
             if len(years) > 0 and y not in years: continue
             if tid in self.team_info[y].keys():
-                rosters.append( list(self.team_info[y][tid]["games"]) )
-        return self.collapse(rosters)
+                games.append( self.order_game_ids_by_date(list(self.team_info[y][tid]["games"]),desc) )
+        return self.collapse(games)
 
     def get_team_opponents(self, tid, years=[]):
         rosters = []
@@ -220,18 +251,22 @@ class Games:
     def get_game_column_names(self):
         return self.info["headers"]["t"]
 
+    def get_date_from_gameid(self, gid):
+        return int(self.get_game_by_id(gid,recarray=False)["home_t"][self.info["headers"]["t"].index("GAME_DATE")])
 
-
+    def get_years(self):
+        return self.years
 
 if __name__=='__main__':
-    # g = Games(years=[2010,2011,2012,2013,2014])
-    g = Games(years=[2014], debug=True)
+    g = Games(years=[2010,2011,2012,2013,2014])
+    # g = Games(years=[2013,2014])
+    # g = Games(years=[2014], debug=True)
 
     # # Some basic function calls
     # print g.get_game_ids(years=[2014])
     # print g.get_game_by_id(21400002)
     # print g.get_player_ids(years=[2014])
-    # print g.get_games_from_player_id(201167)
+    # print g.get_games_from_player_id(201951, desc=True) # order game ids with descending date
     # print g.get_player_by_id(201167)
     # print g.get_team_ids(years=[2014])
     # print g.get_team_roster(1610612743)
@@ -239,8 +274,8 @@ if __name__=='__main__':
     # print g.get_team_opponents(1610612743)
     # print g.get_player_column_names()
     # print g.get_game_column_names()
-
-
+    # print g.get_date_from_gameid(21400002)
+    
     # # Get the team roster given a player
     # teamid = g.get_player_by_id(201167)["team"]
     # for pid in g.get_team_roster(teamid):
@@ -252,4 +287,4 @@ if __name__=='__main__':
     # for gid in g.get_game_ids():
     #     game = g.get_game_by_id(gid)
     #     wl.append( game["home_t"]["WL"] )
-    # print "Home teams win %.1f%% of the time" % (100.0*np.mean(wl))
+    # print "Home teams win %.1f%% of the time (from %i games)" % (100.0*np.mean(wl), len(wl))

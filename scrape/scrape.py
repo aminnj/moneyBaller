@@ -16,11 +16,9 @@ def getData(season, thetype="P"):
 
 if __name__=='__main__':
 
-    # for year in range(2000,2016):
-    for year in [2014]:
+    for year in range(2000,2016):
         season = u.yearToSeason(year)
-        # for ptg in ["P", "T", "G"]:
-        for ptg in ["G"]:
+        for ptg in ["P", "T", "G"]:
             try:
                 data = getData(season, thetype=ptg)
                 outname = "../data/json/data_%s_%i.json" % (ptg, year)
