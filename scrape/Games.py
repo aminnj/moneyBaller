@@ -40,7 +40,7 @@ class Games:
         self.info["data"] = {}
 
         # cols to remove within the context of the game object because they are redundant with other things
-        p_colremove = [ "SEASON_ID", "PLAYER_NAME", "TEAM_ABBREVIATION", "TEAM_NAME", "GAME_ID", "GAME_DATE", "MATCHUP", "WL" ]
+        p_colremove = [ "SEASON_ID", "PLAYER_NAME", "TEAM_ABBREVIATION", "TEAM_NAME", "GAME_DATE", "MATCHUP", "WL" ]
         t_colremove = [ "SEASON_ID", "TEAM_ABBREVIATION", "TEAM_NAME", "MATCHUP" ]
         g_colremove = []
 
@@ -61,6 +61,20 @@ class Games:
                 p_toremove = np.array([pcol[p] for p in p_colremove])
                 t_toremove = np.array([tcol[t] for t in t_colremove])
                 g_toremove = np.array([gcol[g] for g in g_colremove])
+
+                p_colnamesnew = [cn for cn in p_colnames if cn not in p_colremove]
+                t_colnamesnew = [cn for cn in t_colnames if cn not in t_colremove]
+                g_colnamesnew = [cn for cn in g_colnames if cn not in g_colremove]
+
+                pcolnew = { p_colnamesnew[i]:i for i in range(len(p_colnamesnew)) }
+                tcolnew = { t_colnamesnew[i]:i for i in range(len(t_colnamesnew)) }
+                gcolnew = { g_colnamesnew[i]:i for i in range(len(g_colnamesnew)) }
+
+                self.info["headers"] = {}
+                self.info["headers"]["t"] = t_colnamesnew
+                self.info["headers"]["p"] = p_colnamesnew
+                self.info["headers"]["g"] = g_colnamesnew
+
 
             self.team_info[year] = {}
             for team in t_data[np.unique(t_data[:, tcol["TEAM_ID"]], return_index=True)[1]]:
@@ -112,10 +126,6 @@ class Games:
                 t_ishome = np.array(["vs." in m for m in teams[:,tcol["MATCHUP"]]])
                 p_ishome = np.array(["vs." in m for m in players[:,pcol["MATCHUP"]]])
 
-                for player in players:
-                    pid = int(player[pcol["PLAYER_ID"]])
-                    self.player_info[year][pid]["games"].append(gid)
-
                 tid1, tid2 = teams[:,tcol["TEAM_ID"]].astype('int')
                 self.team_info[year][tid1]["opponents"].append(tid2)
                 self.team_info[year][tid2]["opponents"].append(tid1)
@@ -124,25 +134,37 @@ class Games:
                 self.team_info[year][tid1]["players"].extend( list(players[players[:,pcol["TEAM_NAME"]]==self.team_info[year][tid1]["name"]][:,pcol["PLAYER_ID"]]) )
                 self.team_info[year][tid2]["players"].extend( list(players[players[:,pcol["TEAM_NAME"]]==self.team_info[year][tid2]["name"]][:,pcol["PLAYER_ID"]]) )
 
+                # after we delete the columns, we must use pcolnew to get columns
                 players = np.delete(players, p_toremove, axis=1)
                 teams = np.delete(teams, t_toremove, axis=1)
+
                 self.info["data"][year][gid] = {}
                 self.info["data"][year][gid]["home_t"] = teams[t_ishome == True].astype('float')[0]
                 self.info["data"][year][gid]["opp_t"] =  teams[t_ishome == False].astype('float')[0]
                 self.info["data"][year][gid]["home_p"] = players[p_ishome == True].astype('float')
                 self.info["data"][year][gid]["opp_p"] =  players[p_ishome == False].astype('float')
 
+                for player in players:
+                    # print player
+                    # print pcolnew["PLAYER_ID"]
+                    pid = int(player[pcolnew["PLAYER_ID"]])
+                    # print pid
+                    pindex = np.where(players[:,pcolnew["PLAYER_ID"]]==pid)[0][0] # should ALWAYS find the player in the game
+                    self.player_info[year][pid]["games"].append(players[pindex])
+                    # print players[pindex]
+
             # remove duplicates since we blindly extended player list many times above
             for tid in self.team_info[year].keys():
                 self.team_info[year][tid]["players"] = list(np.unique(np.array(self.team_info[year][tid]["players"])))
 
-            if iyear == 0:
-                p_colnames = [cn for cn in p_colnames if cn not in p_colremove]
-                t_colnames = [cn for cn in t_colnames if cn not in t_colremove]
+            for pid in self.player_info[year].keys():
+                if len(self.player_info[year][pid]["games"]) < 1: continue
+                self.player_info[year][pid]["games"] = np.array([tuple(p) for p in self.player_info[year][pid]["games"]], dtype=[(str(col), np.float) for col in pcolnew])
 
-                self.info["headers"] = {}
-                self.info["headers"]["t"] = t_colnames
-                self.info["headers"]["p"] = p_colnames
+                # print self.player_info[year][pid]["games"]
+
+
+
 
 
     def load_season_json(self, year, ptg):
@@ -192,10 +214,12 @@ class Games:
         if recarray:
             tcols = self.info["headers"]["t"]
             pcols = self.info["headers"]["p"]
-            game["home_t"] = np.array([tuple(game["home_t"])], dtype=[(str(col), np.float) for col in tcols])
-            game["opp_t"] = np.array([tuple(game["opp_t"])], dtype=[(str(col), np.float) for col in tcols])
-            game["home_p"] = np.array([tuple(p) for p in game["home_p"]], dtype=[(str(col), np.float) for col in pcols])
-            game["opp_p"] = np.array([tuple(p) for p in game["opp_p"]], dtype=[(str(col), np.float) for col in pcols])
+            # print theid
+            thegame = {}
+            thegame["home_t"] = np.array([tuple(game["home_t"])], dtype=[(str(col), np.float) for col in tcols])
+            thegame["opp_t"] = np.array([tuple(game["opp_t"])], dtype=[(str(col), np.float) for col in tcols])
+            thegame["home_p"] = np.array([tuple(p) for p in game["home_p"]], dtype=[(str(col), np.float) for col in pcols])
+            thegame["opp_p"] = np.array([tuple(p) for p in game["opp_p"]], dtype=[(str(col), np.float) for col in pcols])
 
         return game
 
@@ -258,8 +282,9 @@ class Games:
         return self.years
 
 if __name__=='__main__':
-    g = Games(years=[2010,2011,2012,2013,2014])
-    # g = Games(years=[2013,2014])
+    pass
+    # g = Games(years=[2010,2011,2012,2013,2014])
+    # g = Games(years=[2010,2011,2012,2013,2014,2015])
     # g = Games(years=[2014], debug=True)
 
     # # Some basic function calls
@@ -288,3 +313,18 @@ if __name__=='__main__':
     #     game = g.get_game_by_id(gid)
     #     wl.append( game["home_t"]["WL"] )
     # print "Home teams win %.1f%% of the time (from %i games)" % (100.0*np.mean(wl), len(wl))
+
+    # with open("../data/hometowns.pkl","r") as fh:
+    #     dHometowns = pickle.load(fh)
+
+    # print len(dHometowns.keys())
+
+    # pids = sum(g.get_player_ids(),[])
+    # print len(pids)
+
+    # cnt = 0
+    # for pid in pids:
+    #     name = g.get_player_by_id(pid)[0]["name"]
+    #     if name in dHometowns:
+    #         cnt += 1
+    # print cnt
