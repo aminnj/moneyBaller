@@ -19,10 +19,9 @@ for year in range(2014,2017):
                 url = 'http://rotoguru1.com/cgi-bin/hyday.pl?mon=%s&day=%s&year=%s&game=%s' % (mon,day,year,pred)
                 page = urllib2.urlopen(url).read()
                 soup = BeautifulSoup(page)
-                date = (datetime.datetime(year=year, month=mon, day=day) - \
-                        datetime.datetime(year=1970, month=1, day=1)).days
-
                 try:
+                    date = (datetime.datetime(year=year, month=mon, day=day) - \
+                            datetime.datetime(year=1970, month=1, day=1)).days
                     table = soup.find('table')
 
                     x = (len(table.findAll('tr')) - 1)
