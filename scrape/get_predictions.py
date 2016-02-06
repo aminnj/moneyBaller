@@ -1,4 +1,5 @@
-##This still needs a few more tweaks.
+##STill needs a bit of work, such as pickling the dict and checking that everything is in there.
+
 import urllib2
 from bs4 import BeautifulSoup
 import re
@@ -37,13 +38,9 @@ for year in range(2014,2017)[2:3]:
 
                     if fixed_col[1] not in dict.keys():
                         dict[fixed_col[1]] = {}
-                        if date not in dict[fixed_col[1]].keys():
-                            dict[fixed_col[1]][date] = [fixed_col[3]]
-                            print dict[fixed_col[1]].keys()
-                        else:
-                            print 'else'
-                            dict[fixed_col[1]][date] = np.append(dict[fixed_col[1]][date].copy,fixed_col[3])
-                    #print len(dict[fixed_col[1]][date])
+
+                    if date not in dict[fixed_col[1]].keys():
+                        dict[fixed_col[1]][date] = [fixed_col[3]]
+                    else:
+                        dict[fixed_col[1]][date] = np.append(np.copy(dict[fixed_col[1]][date]),fixed_col[3])
                 print new_table
-                #except:
-                #    print 'table error'
