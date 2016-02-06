@@ -22,6 +22,8 @@ data = {}
 for (pid,year),player in data_raw.items():
     # make new data object with players that have these basic ingredients filled out
     weight, height, position = player["weight"], player["height"], player["position"]
+    # if player["position"] == "Center-Forward": player["position"] = "Forward-Center" # FIXME, do we want to relabel these?
+    # if player["position"] == "Guard-Forward": player["position"] = "Forward-Guard" # FIXME, do we want to relabel these?
     if type(weight) == type(unicode("")) or type(height) == type(unicode("")) or len(position) < 1: continue
     data[(pid,year)] = player
 
