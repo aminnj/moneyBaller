@@ -1,10 +1,11 @@
 import numpy as np
-import random, copy, pprint, math
+import random, copy, pprint, math, sys
 from tqdm import tqdm
 from io import StringIO
 
 # np.random.seed(420)
 alpha = 0.01
+if len(sys.argv) > 1: alpha = float(sys.argv[-1])
 
 # load data
 fname = "fanduel.csv"
@@ -46,9 +47,12 @@ salary = np.sum(np.vectorize(d_id_to_salary.get)(np.concatenate(lineup.values())
 points = np.sum(np.vectorize(d_id_to_points.get)(np.concatenate(lineup.values())))
 energy = H(salary, points)
 
+best_points = -1
+best_salary = -1
+best_lineup = {}
 
 T = 30.0
-for it in range(150):
+for it in range(1,150+1):
     T -= 0.2
     nSweeps = 100*it
 
@@ -71,7 +75,17 @@ for it in range(150):
                 lineup[pos_swap][pidx_swap_out] = pid_swap_in
                 vpoints.append(points)
 
-    vpoints = np.array(vpoints)
+                if points > best_points and salary <= 60000:
+                    best_points = points
+                    best_salary = salary
+                    best_lineup = copy.deepcopy(lineup)
 
+    vpoints = np.array(vpoints)
     print T, salary, points, vpoints.mean(), vpoints.std()/np.sqrt(len(vpoints)), len(vpoints)
 
+# print best_points, best_salary
+# for pos in best_lineup:
+#     print 
+#     print ("%s: " %pos),
+#     for pid in best_lineup[pos]:
+#         print ("%s," % d_id_to_name[pid]),
