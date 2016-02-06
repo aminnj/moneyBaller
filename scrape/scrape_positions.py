@@ -41,6 +41,7 @@ for year, pids in zip(years,seaspids):
     print "doing season:", season
     for pid in tqdm(pids):
         try:
+
             if pid not in general_player_info:
                 json = getData(season=season, pid=pid, thetype="common")
                 height = json['resultSets'][0]['rowSet'][0][10]
@@ -53,12 +54,14 @@ for year, pids in zip(years,seaspids):
             json = getData(season=season, pid=pid, thetype="stats")
             discardFirst = 5 #discard first n since we don't care about playerid, playername, sortorder, gamesplayed
             colnames = json['resultSets'][0]['headers']
+            pprint.pprint( json['resultSets'] )
             dtype = [(str(col), 'S21') if "SHOT_TYPE" in col else (str(col), 'f8') for col in colnames]
             colnames = colnames[discardFirst:]
             dtype = dtype[discardFirst:]
             rows = []
             for stat in json['resultSets']:
                 for row in stat['rowSet']:
+                    row[discardFirst] = "%s_%s" % (''.join([c for c in stat["name"] if c.isupper()]), row[discardFirst])
                     rows.append(row)
             rows = np.array(rows)[:,discardFirst:]
             rows = np.array([tuple(r) for r in rows], dtype=dtype)

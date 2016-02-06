@@ -3,6 +3,8 @@ import random, copy, pprint, math, sys
 from tqdm import tqdm
 from io import StringIO
 
+MAX_SALARY = 60000
+
 # np.random.seed(420)
 alpha = 0.01
 if len(sys.argv) > 1: alpha = float(sys.argv[-1])
@@ -33,7 +35,7 @@ for pid in ids: d_group_by_pos[d_id_to_position[pid]].append(pid)
 for pos in d_group_by_pos.keys(): d_group_by_pos[pos] = np.array(d_group_by_pos[pos])
 
 # make functions for hamiltonian and delta energy
-def H(salary, points): return -points + (alpha*(salary-60000))*int(salary>60000)
+def H(salary, points): return -points + (alpha*(salary-MAX_SALARY))*int(salary>MAX_SALARY)
 def dE(pid_out, pid_in, salary, points):
     return H(salary+d_id_to_salary[pid_in] -d_id_to_salary[pid_out],
              points+d_id_to_points[pid_in] -d_id_to_points[pid_out]) - H(salary,points)
@@ -75,7 +77,7 @@ for it in range(1,150+1):
                 lineup[pos_swap][pidx_swap_out] = pid_swap_in
                 vpoints.append(points)
 
-                if points > best_points and salary <= 60000:
+                if points > best_points and salary <= MAX_SALARY:
                     best_points = points
                     best_salary = salary
                     best_lineup = copy.deepcopy(lineup)
@@ -83,9 +85,9 @@ for it in range(1,150+1):
     vpoints = np.array(vpoints)
     print T, salary, points, vpoints.mean(), vpoints.std()/np.sqrt(len(vpoints)), len(vpoints)
 
-# print best_points, best_salary
-# for pos in best_lineup:
-#     print 
-#     print ("%s: " %pos),
-#     for pid in best_lineup[pos]:
-#         print ("%s," % d_id_to_name[pid]),
+print best_points, best_salary
+for pos in best_lineup:
+    print 
+    print ("%s: " %pos),
+    for pid in best_lineup[pos]:
+        print ("%s," % d_id_to_name[pid]),
