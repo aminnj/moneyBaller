@@ -54,7 +54,6 @@ for year, pids in zip(years,seaspids):
             json = getData(season=season, pid=pid, thetype="stats")
             discardFirst = 5 #discard first n since we don't care about playerid, playername, sortorder, gamesplayed
             colnames = json['resultSets'][0]['headers']
-            pprint.pprint( json['resultSets'] )
             dtype = [(str(col), 'S21') if "SHOT_TYPE" in col else (str(col), 'f8') for col in colnames]
             colnames = colnames[discardFirst:]
             dtype = dtype[discardFirst:]
