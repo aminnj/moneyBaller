@@ -32,13 +32,13 @@ class Load_Games:
 
     def set_fant(self,dict_,stats_):
         stats_[:,dict_['FANT']] = 3.0 * np.nan_to_num(stats_[:,dict_['FG3M']].astype(float))\
-                                  + 2.0 *   np.nan_to_num(stats_[:,dict_['FGM']].astype(float))\
-                                    + 1.0 *  np.nan_to_num(stats_[:,dict_['FTM']].astype(float))\
-                                      + 1.2 *  np.nan_to_num(stats_[:,dict_['REB']].astype(float))\
-                                        + 1.5 *  np.nan_to_num(stats_[:,dict_['AST']].astype(float))\
-                                          + 2.0 *  np.nan_to_num(stats_[:,dict_['BLK']].astype(float))\
-                                            + 2.0 *  np.nan_to_num(stats_[:,dict_['STL']].astype(float))\
-                                              - 1.0 *   np.nan_to_num(stats_[:,dict_['TOV']].astype(float))
+                                + 2.0 *   np.nan_to_num(stats_[:,dict_['FGM']].astype(float))\
+                                + 1.0 *  np.nan_to_num(stats_[:,dict_['FTM']].astype(float))\
+                                + 1.2 *  np.nan_to_num(stats_[:,dict_['REB']].astype(float))\
+                                + 1.5 *  np.nan_to_num(stats_[:,dict_['AST']].astype(float))\
+                                + 2.0 *  np.nan_to_num(stats_[:,dict_['BLK']].astype(float))\
+                                + 2.0 *  np.nan_to_num(stats_[:,dict_['STL']].astype(float))\
+                                - 1.0 *   np.nan_to_num(stats_[:,dict_['TOV']].astype(float))
 
     def load_season_json(self, year, ptg):
         season = u.yearToSeason(year)

@@ -108,10 +108,10 @@ class Games:
                 t_gidLUT[gid].append(t)
 
             # for gid in ["0021400001"]:
-            # for igid,gid in enumerate(gameids):
-            for igid,gid in tqdm(enumerate(gameids)):
+            for igid,gid in enumerate(gameids):
+            # for igid,gid in tqdm(enumerate(gameids)):
 
-                if self.debug and igid > 175: break
+                if self.debug and igid > 100: break
 
                 players = np.array(p_gidLUT[gid])
                 teams = np.array(t_gidLUT[gid])
@@ -184,7 +184,7 @@ class Games:
 
     def order_game_ids_by_date(self, gameids, desc=False):
         # take advantage of the fact that ascending gameids means ascending dates
-        return sorted(gameids, reverse=desc)
+        return np.array(sorted(gameids, reverse=desc))
         
 
     # GETTERS
@@ -195,7 +195,7 @@ class Games:
         else:
             toreturn = np.unique([self.info["data"][y].keys() for y in years if y in self.info["data"]])
         toreturn = self.order_game_ids_by_date(toreturn, desc)
-        if flatten: return sum(toreturn, [])
+        if flatten and (len(toreturn.shape)>1): return sum(toreturn, [])
         else: return toreturn
 
     def get_team_ids(self, years=[]):
@@ -220,6 +220,8 @@ class Games:
             thegame["opp_t"] = np.array([tuple(game["opp_t"])], dtype=[(str(col), np.float) for col in tcols])
             thegame["home_p"] = np.array([tuple(p) for p in game["home_p"]], dtype=[(str(col), np.float) for col in pcols])
             thegame["opp_p"] = np.array([tuple(p) for p in game["opp_p"]], dtype=[(str(col), np.float) for col in pcols])
+
+            return thegame
 
         return game
 
