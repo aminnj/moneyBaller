@@ -4,6 +4,7 @@ sys.path.insert(0,"../")
 import utils.utils as u
 import numpy as np
 import pickle, gzip
+from tqdm import tqdm 
 
 np.set_printoptions(linewidth=205,formatter={'float_kind':lambda x: "%.2f" % x })
 
@@ -21,8 +22,8 @@ def getData(season="2014-15", pid=201166,thetype="common"):
     req = requests.get(requrl, headers=headers, timeout=30)
     return req.json()
 
-years = [2010, 2011, 2012, 2013, 2014, 2015]
-g = Games.Games(years=years, debug=True)
+years = [2013, 2014, 2015]
+g = Games.Games(years=years, debug=False)
 
 seaspids = g.get_player_ids()
 
@@ -37,8 +38,8 @@ for year, pids in zip(years,seaspids):
 
 
 
-    for pid in pids:
-        print "doing season:", season, "player:", pid
+    print "doing season:", season
+    for pid in tqdm(pids):
         try:
             if pid not in general_player_info:
                 json = getData(season=season, pid=pid, thetype="common")
