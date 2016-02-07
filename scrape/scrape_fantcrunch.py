@@ -10,10 +10,7 @@ sources = ['fantasyfeud','fanduel','draftkings','fantasyaces','yahoo']
 g = Games.Games(years=seasons, debug=False)
 for source in sources:
     for year in seasons:
-        print 'getting dates'
-        print 'the game ids  are ' + str(g.get_game_ids(years=[year]))
         datesToFetch = np.unique(np.array(map(g.get_date_from_gameid, g.get_game_ids(years=[year])))) # integers
-        print datesToFetch
         d = {}
         for date in datesToFetch:
             datestr = "%s-%s-%s" % (str(date)[:4], str(date)[4:6], str(date)[6:]) # convert to 2013-01-09
@@ -28,7 +25,7 @@ for source in sources:
                 rawjson = "{"+rawjson.split("\n")[1].split("{",1)[1][:-2].replace("\\","")
                 js = json.loads(rawjson)
                 d[date] = copy.deepcopy(js)
-                print "fetched %s" % datestr
-            except: print "ERROR fetching %s" % datestr
+                print "fetched %s: %s" % (source,datestr)
+            except: print "ERROR fetching %s: %s" % (source,datestr)
 
-        with gzip.open("../data/pickle/%s_%i.pkl" % (sources,year), "wb") as fh: pickle.dump(d, fh)
+        with gzip.open("../data/pickle/%s_%i.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)
