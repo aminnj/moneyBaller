@@ -6,10 +6,10 @@ import Games
 
 seasons = [2014,2015]
 g = Games.Games(years=seasons, debug=False)
-for year in seasons[:1]:
+for year in seasons:
     datesToFetch = np.unique(np.array(map(g.get_date_from_gameid, g.get_game_ids(years=[year])))) # integers
     d = {}
-    for date in datesToFetch[:5]:
+    for date in datesToFetch:
         datestr = "%s-%s-%s" % (str(date)[:4], str(date)[4:6], str(date)[6:]) # convert to 2013-01-09
         try:
             data = requests.get("https://www.fantasycruncher.com/lineup-rewind/draftkings/NBA/%s" % datestr)
