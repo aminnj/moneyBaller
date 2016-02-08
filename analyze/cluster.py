@@ -12,8 +12,8 @@ np.set_printoptions(linewidth=205,formatter={'float_kind':lambda x: "%.2f" % x }
 
 # some vars
 year = 2013
-N=12 # how many of the most common features to use for clustering
-n_clusters=7
+N=10 # how many of the most common features to use for clustering
+n_clusters=5
 
 with gzip.open("../data/pickle/player_stats_%i.pkl" % year,"rb") as fh:
     data_raw = pickle.load(fh)
@@ -44,7 +44,7 @@ for (pid,year),player in data.items():
         continue
 
     allexist = True
-    # requrie that this player has all of the N most common stats present
+    # require that this player has all of the N most common stats present
     # if even one is missing, then there's no way we can cluster, so we skip it
     # of course, we can change this so that we don't use the N most common
     # but we use oru own handpicked variables instead
@@ -62,6 +62,7 @@ for (pid,year),player in data.items():
 
 Xtot = np.array(Xtot)
 print Xtot
+print Xtot.shape
 
 clust = cluster.KMeans(n_clusters=n_clusters, n_init=100, max_iter=500)
 clust.fit(Xtot[:,1:])

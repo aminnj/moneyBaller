@@ -28,4 +28,4 @@ for source in sources:
                 print "fetched %s: %s" % (source,datestr)
             except: print "ERROR fetching %s: %s" % (source,datestr)
 
-        with gzip.open("../data/pickle/%s_%i.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)
+        with gzip.open("../data/pickle/fantcrunch_%s_%i.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)

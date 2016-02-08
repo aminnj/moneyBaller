@@ -6,7 +6,7 @@ from io import StringIO
 MAX_SALARY = 60000
 
 # np.random.seed(420)
-alpha = 0.01
+alpha = 0.5
 if len(sys.argv) > 1: alpha = float(sys.argv[-1])
 
 # load data
@@ -56,7 +56,7 @@ best_lineup = {}
 T = 30.0
 for it in range(1,150+1):
     T -= 0.2
-    nSweeps = 100*it
+    nSweeps = 500*it
 
     vpoints = []
     for isweep in range(nSweeps):
