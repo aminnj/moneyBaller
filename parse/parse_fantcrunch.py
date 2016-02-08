@@ -17,7 +17,7 @@ types = ["yahoo","draftkings", "fanduel", "fantasyaces", "fantasyfeud"]
 
 with open(outfname,"w") as fhout:
     # MAKE CHANGES ON LINES MARKED WITH XXX
-    header = "PlayerName|Date|PlayerID|Site|IsHome|\
+    header = "PlayerName|Date|PlayerID|Site|IsHome|Team|HomeTeam|\
               Injured|InjuryType|InjuryStatement|\
               LastSalary|Salary|GameCount|\
               AveragePoints|SigmaPoints|\
@@ -52,7 +52,7 @@ for year in years:
                         injuryStatement = player["Injury_details"]
 
                     # XXX
-                    Xtot.append( [player["PlayerName"], date, int(pid), typ, player["Team"]==player["HomeTeam"], \
+                    Xtot.append( [player["PlayerName"], date, int(pid), typ, player["Team"]==player["HomeTeam"],player["Team"],player["HomeTeam"], \
                                   injured, injuryType, injuryStatement, \
                                   float(player["Last_Sal"] or "nan"),float(player["Salary"] or "nan"),float(player["gameCount"] or "nan"),\
                                   float(player["Avg_Pts"] or "nan"),float(player["stddev"] or "nan"),\
@@ -65,7 +65,7 @@ for year in years:
         with open(outfname,"a") as fhout:
             for line in Xtot:
                 # XXX
-                fmtstr = "%s|%i|%i|%s|%i|\
+                fmtstr = "%s|%i|%i|%s|%i|%s|%s|\
                              %i|%s|%s|\
                              %.1f|%.1f|%.0f|\
                              %.2f|%.2f|\
