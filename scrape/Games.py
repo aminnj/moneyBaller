@@ -159,7 +159,7 @@ class Games:
 
             for pid in self.player_info[year].keys():
                 if len(self.player_info[year][pid]["games"]) < 1: continue
-                self.player_info[year][pid]["games"] = np.array([tuple(p) for p in self.player_info[year][pid]["games"]], dtype=[(str(col), np.float) for col in pcolnew])
+                self.player_info[year][pid]["games"] = np.array([tuple(p) for p in self.player_info[year][pid]["games"]], dtype=[(str(col), np.float) for col in p_colnamesnew])
 
                 # print self.player_info[year][pid]["games"]
 
