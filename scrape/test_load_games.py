@@ -3,6 +3,9 @@ import operator
 import numpy as np
 import xgboost as xgb
 from sklearn.preprocessing import StandardScaler
+import gzip
+
+import pickle
 
 def evalerror(preds, dtrain):
             labels  = dtrain.get_label()
@@ -14,32 +17,39 @@ m      = Load_Games.Load_Games(years=[2014])
 
 teams   = m.teams
 players = m.players
-t_dict =  m.t_d
-p_dict =  m.p_d
+t_d =  m.t_d
+p_d =  m.p_d
+#print players[:,p_d['POSITION']]
 
-print len(players)
-print len(teams)
+#for line in players[0:10]:
+#    print line
+#    print line[p_d['POSITION']]
+#print sorted( t_d.items(), key=operator.itemgetter(1))
+#print sorted(p_d.items(), key=operator.itemgetter(1))
 
 events = []
-for tit,t_name in enumerate(np.unique(teams[:,t_dict['TEAM_NAME_SEL']].astype(str))):
+for tit,t_name in enumerate(np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str))):
     team = []
-    team_players = players[players[:,p_dict['TEAM_NAME']].astype(str) == t_name]
-    team_games   = teams[teams[:,t_dict["TEAM_NAME_SEL"]].astype(str) == t_name]
-    other_games  = teams[teams[:,t_dict["TEAM_NAME_SEL"]].astype(str) != t_name]
+    with gzip.open("../data/pickle/player_stats_%i.pkl" % 2014,"rb") as fh:
+        data_raw = pickle.load(fh)
 
-    other_games   = other_games[other_games[:,t_dict['GAME_ID_SEL']].argsort()]
-    team_players = team_players[team_players[:,p_dict['GAME_ID']].argsort()]
+    team_players = players[players[:,p_d['TEAM_NAME']].astype(str) == t_name]
+    team_games   = teams[teams[:,t_d["TEAM_NAME_SEL"]].astype(str) == t_name]
+    other_games  = teams[teams[:,t_d["TEAM_NAME_SEL"]].astype(str) != t_name]
 
-    for gid in np.unique(team_games[:,t_dict['GAME_ID_SEL']].astype(int)):
-        game_p     = team_players[team_players[:,p_dict["GAME_ID"]].astype(int)    ==gid]
-        game_tp    = team_games [team_games[:,t_dict["GAME_ID_SEL"]].astype(int)  ==gid]
-        game_to    = other_games[np.searchsorted(other_games[:,t_dict["GAME_ID_SEL"]].astype(int),gid)]
-        other_games= other_games[np.searchsorted(other_games[:,t_dict["GAME_ID_SEL"]].astype(int),gid)+1:]
+    other_games   = other_games[other_games[:,t_d['GAME_ID_SEL']].argsort()]
+    team_players = team_players[team_players[:,p_d['GAME_ID']].argsort()]
+
+    for gid in np.unique(team_games[:,t_d['GAME_ID_SEL']].astype(int)):
+        game_p     = team_players[team_players[:,p_d["GAME_ID"]].astype(int)    ==gid]
+        game_tp    = team_games [team_games[:,t_d["GAME_ID_SEL"]].astype(int)  ==gid]
+        game_to    = other_games[np.searchsorted(other_games[:,t_d["GAME_ID_SEL"]].astype(int),gid)]
+        other_games= other_games[np.searchsorted(other_games[:,t_d["GAME_ID_SEL"]].astype(int),gid)+1:]
 
         for it,range_ in enumerate(m.t_fint):
-            game_p = np.c_[game_p,[game_tp[:,t_dict["AVG_" + str(range_) + "_SEL"]]] * len(game_p)]
+            game_p = np.c_[game_p,[game_tp[:,t_d["AVG_" + str(range_) + "_SEL"]]] * len(game_p)]
         for range_ in m.t_fint:
-            game_p = np.c_[game_p,[game_to[t_dict["AVG_" + str(range_) + "_OPP"]]]* len(game_p)]
+            game_p = np.c_[game_p,[game_to[t_d["AVG_" + str(range_) + "_OPP"]]]* len(game_p)]
 
         if len(team) == 0:
             team = game_p
@@ -56,7 +66,7 @@ for range_ in m.t_fint:
 for range_ in m.t_fint:
     dick_strings.append("AVG_" + str(range_) + "_OPP")
 
-events_dict = m.gen_dict(np.append([s[0] for s in sorted(p_dict.items(), key=operator.itemgetter(1))],dick_strings)
+events_dict = m.gen_dict(np.append([s[0] for s in sorted(p_d.items(), key=operator.itemgetter(1))],dick_strings)
                               ,"None","",False)
 
 print 'the length of events is ' +str(len(events))
