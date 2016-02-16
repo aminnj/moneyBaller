@@ -42,12 +42,12 @@ class Load_Games:
             return_dict[avg_strings[line]+suffix] = line + len(headers)
 
         if type == "P":
-            return_dict["POSITION"]              = len(headers)+len(avg_strings) + 2
-            return_dict["FANT_TARGET"]       = len(headers)+len(avg_strings)
+            return_dict["FANT_TARGET"]       = len(headers)+len(avg_strings) + 0
             return_dict["REST"]              = len(headers)+len(avg_strings) + 1
-            return_dict["FANDUEL_SALARY"]    = len(headers)+len(avg_strings) + 3
-            return_dict["DRAFTKINGS_SALARY"] = len(headers)+len(avg_strings) + 4
-            return_dict["FANT_PREDICTION"]   = len(headers)+len(avg_strings) + 5
+            return_dict["FANDUEL_SALARY"]    = len(headers)+len(avg_strings) + 2
+            return_dict["DRAFTKINGS_SALARY"] = len(headers)+len(avg_strings) + 3
+            return_dict["FANT_PREDICTION"]   = len(headers)+len(avg_strings) + 4
+            return_dict["POSITION"]              = len(headers)+len(avg_strings) + 5
 
         return return_dict
 
@@ -137,12 +137,16 @@ class Load_Games:
                 #Subset the teams and players
                 teams_  =    t_data[t_data[:,t_d['TEAM_ABBREVIATION']] == team_id]
                 players =    p_data[p_data[:,p_d['TEAM_ABBREVIATION']] == team_id]
+                players[players[:,-1].astype(str) == "Center-Forward"][:,-1] = "Center"
+                players[players[:,-1].astype(str) == "Guard-Forward"][:,-1] = "Guard"
                 team_p  = []
 
                 for git_,sel_team in enumerate(teams_):
                     #Cycle through games and find the scores by this team at each position
                     gid      =  sel_team[t_d["GAME_ID"]].astype(int)
                     psub     = players[players[:,p_d["GAME_ID"]].astype(int) == gid]
+                    #psub[psub[:,-1].astype(str)  == "Guard-Forward"] = "Guard"
+                    #psub[psub[:,-1].astype(str)  == "Forward-Guard"] = "Forward"
                     out_ = []
                     for line in self.positions:
                         sum_ = np.sum(psub[psub[:,-1] == line][:,p_d["FANT"]])
@@ -232,16 +236,6 @@ class Load_Games:
             #maps date to days since 1970
             p_data[:,p_d["GAME_DATE"]] =  np.array(map(lambda x: (datetime.datetime(*map(int,x.split("-"))) - \
                                                                      datetime.datetime(year=1970, month=1, day=1)).days, p_data[:,p_d["GAME_DATE"]] ))
-            temp_arr,temp_lines   = [],[]
-            for id_,line in enumerate(p_data):
-                pid = line[p_d['PLAYER_ID']]
-                if (pid,year) not in data_raw:
-                    print 'failed player %s with pid %s for id_ %s' % (line[p_d["PLAYER_NAME"]],pid,id_)
-                    continue
-                else:
-                    temp_arr.append(np.append(line,str(data_raw[(pid,year)]['position'])))
-                    temp_lines.append(id_)
-            p_data = np.c_[p_data[temp_lines],temp_arr]
 
 
 
@@ -308,23 +302,40 @@ class Load_Games:
             else:
                 p_total = np.vstack((p_total,p_year))
         print 'THe length of p_total is ' + str(len(p_total))
+
+        temp_arr,temp_lines   = [],[]
+        for id_,line in enumerate(p_total):
+            pid = line[p_d['PLAYER_ID']]
+            if (pid,year) not in data_raw:
+                print 'failed player %s with pid %s for id_ %s' % (line[p_d["PLAYER_NAME"]],pid,id_)
+                continue
+            else:
+                temp_arr.append(str(data_raw[(pid,year)]['position']))
+                temp_lines.append(id_)
+        p_total = np.c_[p_total[temp_lines],temp_arr]
+
         self.players =  p_total
 
         pc_colnames, pc_data = self.load_season_json(year, "G") # team data for matches
         print pc_colnames
         self.player_cards = np.array(pc_data)
 
-    def __init__(self, years=[2014], player_fant_int = [3,5,9,15,20],team_fant_int = [1,5,10,20], preds_file = '../data/pickle/fantcrunch_merged_nozip.pkl',debug=False):
-    #Keep 1 in team_fant_int or face an error ~-_-~
+    def __init__(self, years=[2014], player_fant = [3,5,9,15,20],team_vs_pos = [1,5,10,20]
+                                   , team_for = [5,10,15,20], team_against = [5,10,15,20]
+
+                 , preds_file = '../data/pickle/fantcrunch_merged_nozip.pkl',debug=False):
+    #Keep 1 in team_vs_pos or face an error ~-_-~
 
         #Years to perform analysis on
         self.years        = years
 
         #Intervals for player fantasy points
-        self.p_fint       = player_fant_int
+        self.p_fint       = player_fant
+        #Intervals for team fantasy pts allowed vs position
+        self.t_fint       = team_vs_pos
 
-        #Intervals for team fantasy pts allowed
-        self.t_fint       = team_fant_int
+        self.t_for        = team_for
+        self.t_against    = team_against
 
         #Position key
         self.positions    = ['Forward', '', 'Center', 'Center-Forward', 'Guard', 'Guard-Forward', 'Forward-Center', 'Forward-Guard']
