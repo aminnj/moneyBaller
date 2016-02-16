@@ -12,9 +12,9 @@ def evalerror(preds, dtrain):
             error_ = np.mean(    np.abs( labels - preds))
             return 'error, ' , float(error_)
 
-def gen_key(p_,m):
+def gen_key(g_,p_,m):
     d_ = {}
-    vars = np.append( ["AVG_" + str(s) + "_" +"POSITION_OPP" for s in m.t_fint],
+    vars = np.append( g_,
                       np.append(["AVG_" + str(s) for s in m.p_fint],p_) )
     for id_,line in enumerate(vars):
         d_[line] = id_
@@ -30,6 +30,7 @@ players = m.players
 t_d =  m.t_d
 p_d =  m.p_d
 
+
 players[players[:,p_d['POSITION']].astype(str)  == "Center-Forward"][:,p_d['POSITION']] = "Center"
 players[players[:,p_d['POSITION']].astype(str)  == "Guard-Forward"] = "Guard"
 #players[players[:,p_d['POSITION']].astype(str)  == "Forward-Guard"] = "Forward"
@@ -38,10 +39,17 @@ print 'The sorted team items are ' + str(sorted( t_d.items(), key=operator.itemg
 print 'The sorted player items are ' + str(sorted(p_d.items(), key=operator.itemgetter(1)))
 
 events = []
+
+g_vars = np.append(np.append(['AVG_' + s + "_SEL" for s in np.array(m.t_inclusive).astype(str)],
+                             ['AVG_' + s + "_OPP" for s in np.array(m.t_inclusive).astype(str)]),
+                             ["AVG_" + str(s) + "_" +"POSITION_OPP" for s in m.t_fint])
+
+p_vars = [['REST'],['FANDUEL_SALARY'],['DRAFTKINGS_SALARY'],['MATCHUP'],['FANT_PREDICTION'],['POSITION'],['FANT_TARGET']]
+d_ = gen_key(g_vars,p_vars,m)
+print sorted(d_.items(), key=operator.itemgetter(1))
+
 p_ = [p_d['REST'],p_d['FANDUEL_SALARY'],p_d['DRAFTKINGS_SALARY'],p_d['MATCHUP'],p_d["FANT_PREDICTION"],p_d["POSITION"],p_d['FANT_TARGET']]
-p_names = [['REST'],['FANDUEL_SALARY'],['DRAFTKINGS_SALARY'],['MATCHUP'],['FANT_PREDICTION'],['POSITION'],['FANT_TARGET']]
-d_ = gen_key(p_names,m)
-print d_.keys()
+
 
 for t_name in np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str)):
     team_players = players[players[:,p_d['TEAM_NAME']].astype(str) == t_name]
@@ -51,7 +59,10 @@ for t_name in np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str)):
         gid = game[t_d['GAME_ID_SEL']]
         for player in team_players[team_players[:,p_d['GAME_ID']] == gid]:
             event = []
-            g_vars = map(lambda x: t_d[x] ,["AVG_" + str(s) + "_" + player[p_d['POSITION']] + "_OPP" for s in m.t_fint])
+            g_vars = np.append( np.append(map(lambda x: t_d[x], ['AVG_' + s + "_SEL" for s in np.array(m.t_inclusive).astype(str)]) ,
+                                          map(lambda x: t_d[x], ['AVG_' + s + "_OPP" for s in np.array(m.t_inclusive).astype(str)]) ),
+                               map(lambda x: t_d[x] ,["AVG_" + str(s) + "_" + player[p_d['POSITION']] + "_OPP" for s in m.t_fint]))
+
             p_vars = np.append(map(lambda x: p_d[x],["AVG_" + str(s) for s in m.p_fint]),p_)
 
             for line in g_vars:
@@ -93,17 +104,46 @@ dvalid_       =  xgb.DMatrix(valid_, label = valid_target,missing=np.nan)
 watchlist   = [(dtrain_,'training'),(dvalid_,'validating')]
 
 
-param_1     = {'max_depth':2,'eta':.05, 'silent':1}#,#'subsample' : .5,'colsample_bytree':.75}#, #,'colsample_bytree':.75,'gamma':100,'min_child_weight':100}
-num_round   = 100
+param_1     = {'max_depth':3,'eta':.05, 'silent':1,'subsample' : .5,'colsample_bytree':.5}#, #,'colsample_bytree':.75,'gamma':100,'min_child_weight':100}
+num_round   = 60
 bst_1         = xgb.train(param_1,dtrain_,num_round,watchlist, feval=evalerror)
 preds_        = bst_1.predict(dvalid_)
 mean_1 ,mean_2,counter_1= 0,0,0
+x,y,z = [],[],[]
+yp,zp = [],[]
 for id_,line in enumerate(events[int(.9*len(events)):]):
     if float(line[d_["AVG_5"]]) != float(line[d_["AVG_5"]]):
         continue
-    mean_1 += np.abs(float(line[d_["FANT_TARGET"]]) - float(line[d_["FANT_PREDICTION"]]))
-    mean_2 += np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_])
+    mean_1 += np.power((float(line[d_["FANT_TARGET"]]) - float(line[d_["FANT_PREDICTION"]])),2) #np.abs(float(line[d_["FANT_TARGET"]]) - float(line[d_["FANT_PREDICTION"]]))/(1.0 + line[d_["FANT_TARGET"]])
+    mean_2 += np.power((float(line[d_["FANT_TARGET"]]) - preds_[id_]),2)#np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_])/(1.0 + line[d_["FANT_TARGET"]])
+    y.append(np.power((float(line[d_["FANT_TARGET"]]) - preds_[id_]),2))#np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_]))
+    z.append(np.power((float(line[d_["FANT_TARGET"]]) - float(line[d_["FANT_PREDICTION"]])),2))#np.abs(float(line[d_["FANT_TARGET"]])- float(line[d_["FANT_PREDICTION"]])))
+    yp.append(np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_])/(line[d_["FANT_TARGET"]] + 1))
+    zp.append(np.abs(float(line[d_["FANT_TARGET"]])- float(line[d_["FANT_PREDICTION"]]))/(line[d_["FANT_TARGET"]] + 1))
+    x.append(line[d_["FANT_PREDICTION"]])
     counter_1 = counter_1 + 1
-mean_1 = mean_1/counter_1
-mean_2 = mean_2/counter_1
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots( nrows=1, ncols=2 )
+
+fig, axs = plt.subplots( nrows=2, ncols=2 )
+
+axs[0, 0].scatter(x, y,color="red")
+axs[0, 0].set_title("M.L. Predictions " )
+
+axs[0, 1].scatter(x, z,color="blue")
+axs[0, 1].set_title("Internet Predictions " )
+
+
+
+axs[1, 0].scatter(x, np.log(np.array(yp)+1.0),color="red")
+axs[1, 0].set_title("M.L. Predictions (MAPE)" )
+
+axs[1, 1].scatter(x, np.log(np.array(zp)+1.0),color="blue")
+axs[1, 1].set_title("Internet Predictions (MAPE) " )
+
+fig.savefig('foo.png')
+
+
+mean_1 = np.sqrt(mean_1)/counter_1
+mean_2 = np.sqrt(mean_2)/counter_1
 print mean_1,mean_2
