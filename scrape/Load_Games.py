@@ -22,13 +22,10 @@ class Load_Games:
         if type == "P":
             avg_strings = ['AVG_'  + s for s in np.array(self.p_fint).astype(str)]
         if type == "T":
-            avg_strings = []
+            avg_strings = ['AVG_' + s for s in np.array(self.t_inclusive).astype(str)]
             for line in self.positions:
                 temp = ['AVG_'  + s +'_' +line for s in np.array(self.t_fint).astype(str)]
-                if len(avg_strings) == 0:
-                    avg_strings = temp
-                else:
-                    avg_strings = np.append(avg_strings,temp)
+                avg_strings = np.append(avg_strings,temp)
 
         for line in range(len(headers)):
             if line < (len(headers)-1):
@@ -118,8 +115,6 @@ class Load_Games:
                     temp_lines.append(id_)
             p_data = np.c_[p_data[temp_lines],temp_arr]
 
-
-
             #maps [W,L] to [0,1]
             t_data[:,t_d["WL"]][t_data[:,t_d["WL"]] == "W"]            = 1
             t_data[:,t_d["WL"]][t_data[:,t_d["WL"]] == "L"]            = 0
@@ -136,30 +131,35 @@ class Load_Games:
             for tit_, team_id in enumerate(np.unique(t_data[:,t_d['TEAM_ABBREVIATION']])):
                 #Subset the teams and players
                 teams_  =    t_data[t_data[:,t_d['TEAM_ABBREVIATION']] == team_id]
+
+
+
+                for id_,line in enumerate(self.t_inclusive):
+                    index = t_d['FANT']
+                    teams_ = np.insert(teams_,index+id_+1,u.ma(teams_[:,index].astype(float),line),1)
+
                 players =    p_data[p_data[:,p_d['TEAM_ABBREVIATION']] == team_id]
                 players[players[:,-1].astype(str) == "Center-Forward"][:,-1] = "Center"
-                players[players[:,-1].astype(str) == "Guard-Forward"][:,-1] = "Guard"
+                players[players[:,-1].astype(str) == "Guard-Forward"][:,-1]  = "Guard"
                 team_p  = []
 
                 for git_,sel_team in enumerate(teams_):
                     #Cycle through games and find the scores by this team at each position
                     gid      =  sel_team[t_d["GAME_ID"]].astype(int)
-                    psub     = players[players[:,p_d["GAME_ID"]].astype(int) == gid]
-                    #psub[psub[:,-1].astype(str)  == "Guard-Forward"] = "Guard"
-                    #psub[psub[:,-1].astype(str)  == "Forward-Guard"] = "Forward"
-                    out_ = []
+                    psub     =  players[players[:,p_d["GAME_ID"]].astype(int) == gid]
+                    t2_      = []
                     for line in self.positions:
                         sum_ = np.sum(psub[psub[:,-1] == line][:,p_d["FANT"]])
                         if sum_ != False:
-                            out_.append(sum_)
+                            t2_.append(sum_)
                         else:
-                            out_.append(np.nan)
-                    sel_team = np.append(sel_team,out_)
+                            t2_.append(np.nan)
+                    sel_team = np.append(sel_team,t2_)
+
                     if len(team_p) == 0:
                         team_p  = sel_team
                     else:
                         team_p = np.vstack((team_p,sel_team))
-
 
                 if len(t_year) == 0:
                     t_year = team_p
@@ -320,10 +320,8 @@ class Load_Games:
         print pc_colnames
         self.player_cards = np.array(pc_data)
 
-    def __init__(self, years=[2014], player_fant = [3,5,9,15,20],team_vs_pos = [1,5,10,20]
-                                   , team_for = [5,10,15,20], team_against = [5,10,15,20]
-
-                 , preds_file = '../data/pickle/fantcrunch_merged_nozip.pkl',debug=False):
+    def __init__(self, years=[2014], player_fant = [5,9,20],team_vs_pos = [1,5,10,20], team_inc = [5,10,20],
+                 preds_file = '../data/pickle/fantcrunch_merged_nozip.pkl',debug=False):
     #Keep 1 in team_vs_pos or face an error ~-_-~
 
         #Years to perform analysis on
@@ -334,8 +332,7 @@ class Load_Games:
         #Intervals for team fantasy pts allowed vs position
         self.t_fint       = team_vs_pos
 
-        self.t_for        = team_for
-        self.t_against    = team_against
+        self.t_inclusive  = team_inc
 
         #Position key
         self.positions    = ['Forward', '', 'Center', 'Center-Forward', 'Guard', 'Guard-Forward', 'Forward-Center', 'Forward-Guard']
