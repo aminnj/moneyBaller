@@ -1,9 +1,9 @@
-import sys
-sys.path.append('../scrape')
-import Load_Games
 import operator
 import numpy as np
 import pickle
+import sys
+sys.path.insert(0,"../")
+import Load_Games
 
 def gen_key(g_,p_,m):
     d_ = {}
@@ -70,5 +70,5 @@ for id_,line in enumerate(m.positions):
 
 events[:,d_['POSITION']] = map(lambda x: pos_[x] ,events[:,d_['POSITION']])
 head = ''
-for line in d_.keys(): head = head + line + ','
+for line in sorted(d_.items(), key=operator.itemgetter(1)): head = head + str(line[0]) + ','
 np.savetxt('../data/events.csv',events.astype(float),delimiter=',',header = head)
