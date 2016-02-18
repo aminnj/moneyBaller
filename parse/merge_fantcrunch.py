@@ -42,5 +42,4 @@ for typ in types:
                         continue
 
                 d_[p_nam][date][typ] = data[key_1][key_2]
-print d_
 with open(outfname , "wb") as fh: pickle.dump(d_, fh)
