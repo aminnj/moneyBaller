@@ -13,8 +13,14 @@ if pass_:
     preds = pickle.load(handle)
   for key_1 in preds.keys():
     for key_2 in preds[key_1].keys():
-      date = int(preds[key_1][key_2]['draftkings']['DateTime'][0:10].replace("-",""))
+      try:
+      	date = int(preds[key_1][key_2]['fanduel']['DateTime'][0:10].replace("-",""))
+      except:
+	print "An entry had an error" 
+	continue
       if date not in existing_dates:
+	if date == 20150201:
+		continue
       	existing_dates.append(date)
 print existing_dates
 seasons = [2014,2015]
@@ -24,12 +30,14 @@ g = Games.Games(years=seasons, debug=False)
 for source in sources:
     for year in seasons:
         datesToFetch = np.unique(np.array(map(g.get_date_from_gameid, g.get_game_ids(years=[year])))).astype(int) # integers
-        print "Before filtering" + len(datesToFetch)
+        print "Before filtering" + str(len(datesToFetch))
         if len(existing_dates) > 0:
-        	print "After filtering" + len(list(set(datesToFetch) - set(existing_dates)))
-	break
-        d = {}
-        for date in datesToFetch:
+        	print "After filtering" + str(len(list(set(datesToFetch) - set(existing_dates))))
+	if pass_:
+		d = preds
+	else:
+        	d = {}
+        for date in list(set(datesToFetch) - set(existing_dates)):
             datestr = "%s-%s-%s" % (str(date)[:4], str(date)[4:6], str(date)[6:]) # convert to 2013-01-09
             try:
                 data = requests.get("https://www.fantasycruncher.com/lineup-rewind/%s/NBA/%s" % (source,datestr))
@@ -45,4 +53,4 @@ for source in sources:
                 print "fetched %s: %s" % (source,datestr)
             except: print "ERROR fetching %s: %s" % (source,datestr)
 
-        with gzip.open("../data/pickle/fantcrunch_%s_%i.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)
+        with open("../data/pickle/fantcrunch_%s_%i_temp.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)

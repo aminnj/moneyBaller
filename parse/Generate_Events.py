@@ -14,7 +14,7 @@ def gen_key(g_,p_,m):
     return d_
 
 np.random.seed(0)
-m      = Load_Games.Load_Games(years=[2014])
+m      = Load_Games.Load_Games(years=[2014,2015])
 
 teams   = m.teams
 players = m.players
@@ -26,6 +26,7 @@ print 'The sorted team items are ' + str(sorted( t_d.items(), key=operator.itemg
 print 'The sorted player items are ' + str(sorted(p_d.items(), key=operator.itemgetter(1)))
 
 events = []
+lookup = []
 
 g_vars = np.append(np.append(['AVG_' + s + "_SEL" for s in np.array(m.t_inclusive).astype(str)],
                              ['AVG_' + s + "_OPP" for s in np.array(m.t_inclusive).astype(str)]),
@@ -47,6 +48,8 @@ for t_name in np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str)):
         gid = game[t_d['GAME_ID_SEL']]
         for player in team_players[team_players[:,p_d['GAME_ID']] == gid]:
             event = []
+            p_info = []
+
             g_vars = np.append( np.append(map(lambda x: t_d[x], ['AVG_' + s + "_SEL" for s in np.array(m.t_inclusive).astype(str)]) ,
                                           map(lambda x: t_d[x], ['AVG_' + s + "_OPP" for s in np.array(m.t_inclusive).astype(str)]) ),
                                map(lambda x: t_d[x] ,["AVG_" + str(s) + "_" + player[p_d['POSITION']] + "_OPP" for s in m.t_fint]))
@@ -58,10 +61,19 @@ for t_name in np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str)):
 
             for line in p_vars:
                 event.append(player[line])
+
+            p_info.append(str(player[p_d['PLAYER_NAME']]))
+            p_info.append(str(player[p_d['GAME_DATE']]))
+
             events.append(event)
+            lookup.append(p_info)
 
 events        = np.array(events)
+lookup = np.array(lookup)
+
+lookup        = lookup[events[:,d_['AVG_9']].astype(float) == events[:,d_['AVG_9']].astype(float)]
 events        = events[events[:,d_['AVG_9']].astype(float) == events[:,d_['AVG_9']].astype(float)]
+lookup        = lookup[events[:,d_['FANT_TARGET']].astype(float) == events[:,d_['FANT_TARGET']].astype(float)]
 events        = events[events[:,d_['FANT_TARGET']].astype(float) == events[:,d_['FANT_TARGET']].astype(float)]
 
 pos_ = {}
@@ -72,3 +84,6 @@ events[:,d_['POSITION']] = map(lambda x: pos_[x] ,events[:,d_['POSITION']])
 head = ''
 for line in sorted(d_.items(), key=operator.itemgetter(1)): head = head + str(line[0]) + ','
 np.savetxt('../data/parsed/events.csv',events.astype(float),delimiter=',',header = head)
+
+np.savetxt('../data/parsed/events_lookup.csv',lookup,delimiter=',',header = 'PLAYER_NAME,GAME_DATE',fmt="%s")#,fmt=["S24","S24"])
+
