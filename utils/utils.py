@@ -68,10 +68,3 @@ def ma(x, N):
              else:
                  y[ctr-N] = np.sum(valid_z)/len(valid_z)
         return np.append([np.nan]*(N-1),y)
-
-
-def makeWeights(self):
-        self.windowsize = int(1.0*self.RATE/self.CHUNK*self.TWINDOW)
-        self.weight = np.arange(0,self.windowsize,1.0)
-        self.weight = np.exp(self.DECAYRATE*self.weight/len(self.weight))
-        self.weight /= np.sum(self.weight)
