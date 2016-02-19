@@ -98,7 +98,7 @@ axs[2].set_ylim([np.min(y_3),np.max(y_3)])
 
 fig.subplots_adjust(hspace=.35)
 
-fig.savefig('foo.png')
+fig.savefig('error_plots.png')
 
 
 print np.sqrt(np.mean(y_1)),np.sqrt(np.mean(z_1))
