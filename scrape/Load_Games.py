@@ -321,7 +321,7 @@ class Load_Games:
         self.player_cards = np.array(pc_data)
 
     def __init__(self, years=[2014], player_fant = [5,9,20],team_vs_pos = [1,5,10,20], team_inc = [5,10,20],
-                 preds_file = '../data/pickle/fantcrunch_merged_nozip.pkl',debug=False):
+                 preds_file = '../data/parsed/fantcrunch_merged.pkl',debug=False):
     #Keep 1 in team_vs_pos or face an error ~-_-~
 
         #Years to perform analysis on

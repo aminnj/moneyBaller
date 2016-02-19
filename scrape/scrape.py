@@ -16,7 +16,7 @@ def getData(season, thetype="P"):
 
 if __name__=='__main__':
 
-    for year in range(2000,2016):
+    for year in range(2015,2016):
         season = u.yearToSeason(year)
         for ptg in ["P", "T", "G"]:
             try:

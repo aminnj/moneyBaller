@@ -10,12 +10,12 @@ np.set_printoptions(linewidth=205,formatter={'float_kind':lambda x: "%.2f" % x }
 # some vars
 outfname = "../data/parsed/fantcrunch_merged.pkl"
 years    = [2014,2015]
-types    = ["fanduel", "draftkings", "fantasyaces", "fantasyfeud","yahoo"]
+types    = ["fanduel", "draftkings"]#CAN ADD IN LATER, NOT USEFUL FOR NOW#, "fantasyaces", "fantasyfeud","yahoo"]
 d_       = {}
 for typ in types:
     for year in years:
         try:
-            with gzip.open("../data/pickle/%s_%i.pkl" % (typ,year),"rb") as fh: data = pickle.load(fh)
+            with gzip.open("../data/pickle/fantcrunch_%s_%i.pkl" % (typ,year),"rb") as fh: data = pickle.load(fh)
         except:
             print 'Failed for file ../data/pickle/%s_%i.pkl' % (typ,year)
             continue
