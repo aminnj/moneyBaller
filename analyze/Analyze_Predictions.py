@@ -1,6 +1,7 @@
 import numpy as np
 import xgboost as xgb
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler,Imputer
+from sklearn import datasets, linear_model
 
 def evalerror(preds, dtrain):
             labels  = dtrain.get_label()
@@ -44,8 +45,15 @@ watchlist   = [(dtrain_,'training'),(dvalid_,'validating')]
 param_1     = {'max_depth':4,'eta':.05, 'silent':1,'colsample_bytree':.85,'subsample' : .45}#,'colsample_bytree':.5}
 num_round   = 70
 bst_1         = xgb.train(param_1,dtrain_,num_round,watchlist, feval=evalerror)
-preds_        = bst_1.predict(dvalid_)
+preds_1        = bst_1.predict(dvalid_)
 
+regr = linear_model.Lasso (alpha = 3.2)#LinearRegression()
+train_ = Imputer(missing_values='NaN', strategy='mean', axis=0).fit_transform(train_)
+valid_ = Imputer(missing_values='NaN', strategy='mean', axis=0).fit_transform(valid_)
+
+regr.fit(train_, train_target)
+preds_2 = regr.predict(valid_)
+preds_ = (np.array(preds_1) + np.array(preds_2)) / 2.0
 mean_1 ,mean_2,counter_1= 0,0,0
 y_1,z_1,y_2,z_2,y_3,z_3 = [],[],[],[],[],[]
 x               = []
@@ -93,4 +101,6 @@ fig.subplots_adjust(hspace=.35)
 fig.savefig('foo.png')
 
 
-print np.sqrt(np.mean(y_1)),np.sqrt(np.mean(z_2))
+print np.sqrt(np.mean(y_1)),np.sqrt(np.mean(z_1))
+print np.mean(y_2),np.mean(z_2)
+print np.mean(y_3),np.mean(z_3)
