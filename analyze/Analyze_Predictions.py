@@ -34,13 +34,15 @@ vars_scaled   = StandardScaler().fit_transform(vars_scaled)
 vars_scaled[X.astype(float) != X.astype(float)] = np.nan
 
 train_        = X[0:int(.9*len(events))].astype(float)
+train_scaled  = vars_scaled[0:int(.9*len(events))].astype(float)
 train_target  = y[0:int(.9*len(events))].astype(float)
 
 valid_        = X[int(.9*len(events)):].astype(float)
 valid_target  = y[int(.9*len(events)):].astype(float)
+valid_scaled  = vars_scaled[int(.9*len(events)):].astype(float)
 
-dtrain_       =  xgb.DMatrix(train_, label = train_target,missing=np.nan)
-dvalid_       =  xgb.DMatrix(valid_, label = valid_target,missing=np.nan)
+dtrain_       =  xgb.DMatrix(train_scaled, label = train_target,missing=np.nan)
+dvalid_       =  xgb.DMatrix(valid_scaled, label = valid_target,missing=np.nan)
 watchlist   = [(dtrain_,'training'),(dvalid_,'validating')]
 param_1     = {'max_depth':4,'eta':.05, 'silent':1,'colsample_bytree':.85,'subsample' : .45}#,'colsample_bytree':.5}
 num_round   = 70

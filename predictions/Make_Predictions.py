@@ -18,21 +18,18 @@ def gen_dict(header):
 
 
 f_events      = '../data/parsed/events.csv'
-events        = np.genfromtxt(f_events, delimiter=",", filling_values=np.nan, skip_header=1)
+events        = np.genfromtxt(f_events, delimiter=",", filling_values=-999999, skip_header=1)
 with open(f_events, 'r') as f:
     header = f.readline()
 d_      = gen_dict(header)
-X       = events[:,range(0,len(events[0])-1)].astype(float)
-y       = events[:,-1].astype(float)
 
-X = Imputer(missing_values=np.nan, strategy='mean', axis=0).fit_transform(X)
-X = StandardScaler().fit_transform(X)
 
 f_lookup      = '../data/parsed/events_lookup.csv'
 lookup        = np.genfromtxt(f_lookup, delimiter=",", names=True,dtype=["S20","i8"])
 
 
-f_fanduel     = 'FanDuel-NBA-2016-01-29-14555-players-list.csv'
+#f_fanduel     = 'FanDuel-NBA-2016-01-29-14555-players-list.csv'
+f_fanduel      = 'FanDuel-NBA-2016-02-06-14627-players-list.csv'
 fanduel       = np.genfromtxt(f_fanduel, delimiter=",", names=True,dtype=["S20","S20","S20","S20","S20","S20","S20"
                                                                          ,"S20","S20","S20","S20","S20","S20"])
 
@@ -40,7 +37,15 @@ fanduel['Salary']     = np.array([int(x.replace("\"","")) for x in fanduel['Sala
 fanduel['First_Name'] = np.array([fanduel['First_Name'][x].replace("\"","") + " " + fanduel['Last_Name'][x].replace("\"","")
                                   for x in range(len(fanduel))])
 
-date          =  int((datetime.datetime(year=2016, month=1, day=29) - datetime.datetime(year=1970, month=1, day=1)).days)
+date          =  int((datetime.datetime(year=2016, month=2, day=06) - datetime.datetime(year=1970, month=1, day=1)).days)
+
+
+
+X       = events[:,range(0,len(events[0])-1)].astype(float)
+y       = events[:,-1].astype(float)
+
+X       = Imputer(missing_values='NaN', strategy='mean', axis=0).fit_transform(X)
+#X       = StandardScaler().fit_transform(X)
 
 train   = X[lookup['GAME_DATE'] != date]
 train_t = y[lookup['GAME_DATE'] != date]
@@ -48,9 +53,7 @@ test    = X[lookup['GAME_DATE'] == date]
 test_t  = y[lookup['GAME_DATE'] == date]
 
 regr    = linear_model.Lasso (alpha = 3.2).fit(train,train_t)#LinearRegression()
-preds  = regr.predict(test)
-print np.mean( np.abs(test_t - preds))
-print np.mean( np.abs(test_t - events[lookup['GAME_DATE'] == date][:,d_['FANT_PREDICTION']]))
+preds   = regr.predict(test)
 
 lookup  = lookup[lookup['GAME_DATE'] == date]
 
@@ -76,9 +79,8 @@ for id_,name in enumerate(lookup['PLAYER_NAME']):
         t_event.append(fanduel['First_Name'][fid_][0].replace("\"",""))
         t_event.append(fanduel['Position'][fid_][0].replace("\"",""))
         t_event.append(int( fanduel['Salary'][fid_][0].replace("\"","") ))
-
-        #t_event.append(preds[id_])
-        t_event.append(events[:,d_['FANT_PREDICTION']][id_])
+        t_event.append(preds[id_])
+        #t_event.append(events[:,d_['FANT_PREDICTION']][id_])
         t_event.append(events[:,d_['FANT_TARGET']][id_])
     r_events.append(t_event)
 r_events = np.array(r_events)
