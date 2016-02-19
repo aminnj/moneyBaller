@@ -14,7 +14,7 @@ def gen_dict(header):
         d_[line] = id_
     return d_
 
-f_events      = '../data/events.csv'
+f_events      = '../data/parsed/events.csv'
 events        = np.genfromtxt(f_events, delimiter=",", filling_values=-999999, skip_header=1)
 
 with open(f_events, 'r') as f:
