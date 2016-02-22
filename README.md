@@ -12,10 +12,6 @@ Steps to perform current analysis:
 [C]: Analyze previous predictions<br />
 (1) Run analyze/Analyze_Predictions.py<br />
 
-[D]: Make up to date predictions<br />
+[D]: Make up to date predictions and lineups<br />
 First, scrape all proper files (will need to add a FanDuel scraper).<br />
 (1) Run predictions/Make_Predictions.py<br />
-
-[E]: Generate a lineup<br />
-(1) Run predictions/Generate_Lineup.py<br />
-
