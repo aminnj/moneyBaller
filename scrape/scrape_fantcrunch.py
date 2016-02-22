@@ -3,41 +3,16 @@ import json, copy
 import pickle, gzip
 import numpy as np
 import Games
-import os.path
-merged_dict = "../data/parsed/fantcrunch_merged.pkl"
-pass_       = os.path.exists(merged_dict)
 
-if pass_:
-  existing_dates = []
-  with open(merged_dict, 'rb') as handle:
-    preds = pickle.load(handle)
-  for key_1 in preds.keys():
-    for key_2 in preds[key_1].keys():
-      try:
-      	date = int(preds[key_1][key_2]['fanduel']['DateTime'][0:10].replace("-",""))
-      except:
-	print "An entry had an error" 
-	continue
-      if date not in existing_dates:
-	if date == 20150201:
-		continue
-      	existing_dates.append(date)
-print existing_dates
 seasons = [2014,2015]
-sources = ['fantasyfeud','fanduel','draftkings','fantasyaces','yahoo']
+sources = ['fanduel','draftkings']#'fantasyfeud','fanduel','draftkings','fantasyaces','yahoo']
 ###Modified to pick up all sources on fantcrunch.  This makes the other scraper pretty obsolete.
 g = Games.Games(years=seasons, debug=False)
 for source in sources:
     for year in seasons:
-        datesToFetch = np.unique(np.array(map(g.get_date_from_gameid, g.get_game_ids(years=[year])))).astype(int) # integers
-        print "Before filtering" + str(len(datesToFetch))
-        if len(existing_dates) > 0:
-        	print "After filtering" + str(len(list(set(datesToFetch) - set(existing_dates))))
-	if pass_:
-		d = preds
-	else:
-        	d = {}
-        for date in list(set(datesToFetch) - set(existing_dates)):
+        datesToFetch = np.unique(np.array(map(g.get_date_from_gameid, g.get_game_ids(years=[year])))) # integers
+        d = {}
+        for date in datesToFetch:
             datestr = "%s-%s-%s" % (str(date)[:4], str(date)[4:6], str(date)[6:]) # convert to 2013-01-09
             try:
                 data = requests.get("https://www.fantasycruncher.com/lineup-rewind/%s/NBA/%s" % (source,datestr))
@@ -53,4 +28,4 @@ for source in sources:
                 print "fetched %s: %s" % (source,datestr)
             except: print "ERROR fetching %s: %s" % (source,datestr)
 
-        with open("../data/pickle/fantcrunch_%s_%i_temp.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)
+        with gzip.open("../data/pickle/fantcrunch_%s_%i.pkl" % (source,year), "wb") as fh: pickle.dump(d, fh)

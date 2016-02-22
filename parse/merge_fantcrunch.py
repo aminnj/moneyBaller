@@ -8,7 +8,7 @@ sys.path.insert(0,"../")
 np.set_printoptions(linewidth=205,formatter={'float_kind':lambda x: "%.2f" % x })
 
 # some vars
-outfname = "../data/parsed/fantcrunch_merged.pkl"
+outfname = "../data/parsed/fantcrunch_merged_temp.pkl"
 years    = [2014,2015]
 types    = ["fanduel", "draftkings"]#CAN ADD IN LATER, NOT USEFUL FOR NOW#, "fantasyaces", "fantasyfeud","yahoo"]
 d_       = {}
@@ -24,6 +24,7 @@ for typ in types:
         m1,m2 = [],[]
         for key_1 in data.keys():
             m1.append(key_1)
+	    print key_1
             date = str( (datetime.datetime(int(str(key_1)[0:4]),int(str(key_1)[4:6]),int(str(key_1)[6:8])) - \
             datetime.datetime(year=1970, month=1, day=1)).days)
             for key_2 in data[key_1].keys():

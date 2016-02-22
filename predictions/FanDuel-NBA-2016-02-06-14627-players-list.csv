@@ -1,4 +1,4 @@
-#Id,Position,First_Name,Last_Name,FPPG,Played,Salary,Game,Team,Opponent,Injury Indicator,Injury Details,1,2
+#Id,Position,First_Name,Last_Name,FPPG,Played,Salary,Game,Team,Opponent,Injury_Indicator,Injury Details,1,2
 14627-9642,PG,Russell,Westbrook,49.07843137254902,51,11000,OKC@GS,OKC,GS,,,,
 14627-9524,PG,Stephen,Curry,47.06170212765958,47,10800,OKC@GS,GS,OKC,,,,
 14627-9646,SF,Kevin,Durant,44.96590909090909,44,10700,OKC@GS,OKC,GS,,,,
