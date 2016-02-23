@@ -7,12 +7,12 @@ import datetime
 import pickle
 dict_ = {'10': 'oct','11': 'nov','12': 'dec','01' : 'jan','02' : 'feb'}
 d_    = {}
-seasons = [2014,2015]
+seasons = [2015]
 g = Games.Games(years=seasons, debug=False)
 filename = '../data/parsed/backtest.pkl'
 for year in seasons:
     datesToFetch = np.unique(np.array(map(g.get_date_from_gameid, g.get_game_ids(years=[year])))) # integers
-    for date in datesToFetch[:2]:
+    for date in datesToFetch:
         numDate =  (datetime.datetime(int(str(date)[:4]), int(str(date)[4:6]), int(str(date)[6:])) - datetime.datetime(year=1970, month=1, day=1)).days
         datestr = "%s-%s-%s" % ( dict_[str(date)[4:6]], str(date)[6:],str(date)[:4]) # convert to 2013-01-09
         print datestr

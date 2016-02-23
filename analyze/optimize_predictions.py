@@ -12,7 +12,10 @@ class optimize_predictions:
         return self.H(salary+self.d_id_to_salary[pid_in] -self.d_id_to_salary[pid_out],
                  points+self.d_id_to_points[pid_in] -self.d_id_to_points[pid_out]) - self.H(salary,points)
 
-    def __init__(self,data,d_,alpha = .5, backtest = True):
+    def get_points(self):
+        return self.points
+
+    def __init__(self,data,d_,alpha = .5, backtest = True, do_update = False):
         self.MAX_SALARY = 60000
         self.alpha = alpha
         # convert Id to integer because this fanduel is stupid
@@ -53,7 +56,7 @@ class optimize_predictions:
         for it in range(1,150+1):
             T -= 0.2
             if T < 0: continue
-            nSweeps = 20000*it
+            nSweeps = 2500*it
 
             vpoints = []
 
@@ -75,7 +78,7 @@ class optimize_predictions:
                         lineup[pos_swap][pidx_swap_out] = pid_swap_in
                         vpoints.append(points)
 
-                        if points > best_points + 2.5 and salary <= self.MAX_SALARY:
+                        if points > best_points + 0.1 and salary <= self.MAX_SALARY:
                             best_points = points
                             best_salary = salary
                             best_lineup = copy.deepcopy(lineup)
@@ -84,15 +87,23 @@ class optimize_predictions:
                             else:
                                 lineups = np.append(lineups[1:10],best_lineup)
             vpoints = np.array(vpoints)
-            print T, salary, points, vpoints.mean(), vpoints.std()/np.sqrt(len(vpoints)), len(vpoints)
+            if do_update:
+                print T, salary, points, vpoints.mean(), vpoints.std()/np.sqrt(len(vpoints)), len(vpoints)
 
-        print best_points, best_salary
-        for line in lineups:
-            for pos in line:
-                print
-                for pid in line[pos]:
-                    print ("%s: %s w/ Predicted: %s, Actual %s " % (pos,self.d_id_to_name[pid],self.d_id_to_points[pid],self.d_id_to_actual[pid]))
-            print 'The team salary was ' + str(np.sum(np.vectorize(self.d_id_to_salary.get)(np.concatenate(line.values()))))
-            print 'The predicted points were ' + str(np.sum(np.vectorize(self.d_id_to_points.get)(np.concatenate(line.values()))))
-            if backtest:
-                print 'The actual points were ' + str(np.sum(np.vectorize(self.d_id_to_actual.get)(np.concatenate(line.values()))))
+        #print best_points, best_salary
+        if do_update:
+            for line in lineups:
+                for pos in line:
+                    print
+                    for pid in line[pos]:
+                        print ("%s: %s w/ Predicted: %s, Actual %s " % (pos,self.d_id_to_name[pid],self.d_id_to_points[pid],self.d_id_to_actual[pid]))
+                print 'The team salary was ' + str(np.sum(np.vectorize(self.d_id_to_salary.get)(np.concatenate(line.values()))))
+                print 'The predicted points were ' + str(np.sum(np.vectorize(self.d_id_to_points.get)(np.concatenate(line.values()))))
+        if backtest:
+            pts = []
+            preds = []
+            for line in lineups:
+                preds.append(np.sum(np.vectorize(self.d_id_to_points.get)(np.concatenate(line.values()))))
+                pts.append(np.sum(np.vectorize(self.d_id_to_actual.get)(np.concatenate(line.values()))))
+        #print pts
+        self.points = pts
