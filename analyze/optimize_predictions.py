@@ -75,7 +75,7 @@ class optimize_predictions:
                         lineup[pos_swap][pidx_swap_out] = pid_swap_in
                         vpoints.append(points)
 
-                        if points > best_points + 0.01 and salary <= self.MAX_SALARY:
+                        if points > best_points + 2.5 and salary <= self.MAX_SALARY:
                             best_points = points
                             best_salary = salary
                             best_lineup = copy.deepcopy(lineup)

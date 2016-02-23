@@ -22,8 +22,8 @@ with open(f_events, 'r') as f:
 d_ = gen_dict(header)
 
 print d_.keys()
-X       = events[:,range(0,len(events[0])-1)]
-y       = events[:,len(events[0])-1]
+X       = events[:,range(0,len(events[0])-2)]
+y       = events[:,-1]
 
 vars_scaled = X.copy().astype(float)
 for line in range(len(vars_scaled[0])):
@@ -34,18 +34,21 @@ vars_scaled   = StandardScaler().fit_transform(vars_scaled)
 vars_scaled[X.astype(float) != X.astype(float)] = np.nan
 
 train_        = X[0:int(.9*len(events))].astype(float)
+#train_        = X[0:int(.9*len(events))][events[0:int(.9*len(events))][:,d_['FANT_PREDICTION']] > 25 ].astype(float)
+
 train_scaled  = vars_scaled[0:int(.9*len(events))].astype(float)
 train_target  = y[0:int(.9*len(events))].astype(float)
+#train_target  = y[0:int(.9*len(events))][events[0:int(.9*len(events))][:,d_['FANT_PREDICTION']] > 25 ].astype(float)
 
-valid_        = X[int(.9*len(events)):][events[int(.9*len(events)):][:,d_['FANT_PREDICTION']] > 25].astype(float)
-valid_target  = y[int(.9*len(events)):][events[int(.9*len(events)):][:,d_['FANT_PREDICTION']] > 25].astype(float)
+valid_        = X[int(.9*len(events)):].astype(float)
+valid_target  = y[int(.9*len(events)):].astype(float)
 valid_scaled  = vars_scaled[int(.9*len(events)):].astype(float)
 
 dtrain_       =  xgb.DMatrix(train_, label = train_target,missing=np.nan)
 dvalid_       =  xgb.DMatrix(valid_, label = valid_target,missing=np.nan)
 watchlist     = [(dtrain_,'training'),(dvalid_,'validating')]
-param_1       = {'max_depth':6,'eta':.05, 'silent':1,'colsample_bytree':.85,'subsample' : .45}#,'colsample_bytree':.5}
-num_round     = 250
+param_1       = {'max_depth':4,'eta':.05, 'silent':1,'colsample_bytree':.45,'subsample' : .45}#,'colsample_bytree':.5}
+num_round     = 125
 bst_1         = xgb.train(param_1,dtrain_,num_round,watchlist, feval=evalerror)
 preds_1       = bst_1.predict(dvalid_)
 
@@ -55,17 +58,20 @@ valid_ = Imputer(missing_values='NaN', strategy='mean', axis=0).fit_transform(va
 
 regr.fit(train_, train_target)
 preds_2 = regr.predict(valid_)
-preds_ = preds_2#preds_2#(np.array(preds_1) )# + np.array(preds_2)) / 2.0
+preds_ = preds_1#preds_2#(np.array(preds_1) )# + np.array(preds_2)) / 2.0
 mean_1 ,mean_2,counter_1= 0,0,0
 y_1,z_1,y_2,z_2,y_3,z_3 = [],[],[],[],[],[]
 x               = []
 for id_,line in enumerate(valid_target):
-
+    #if valid_[id_][d_["FANT_PREDICTION"]]  < 20:
+    #    continue
+    if preds_[id_] < 30:
+        continue
     y_1.append(np.power((float(line) - preds_[id_]),2))#np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_]))
     z_1.append(np.power((float(line) - float(valid_[id_][d_["FANT_PREDICTION"]])),2))#np.abs(float(line[d_["FANT_TARGET"]])- float(line[d_["FANT_PREDICTION"]])))
 
-    y_2.append(np.abs((float(line) - preds_[id_])))#np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_]))
-    z_2.append(np.abs((float(line) - float(valid_[id_][d_["FANT_PREDICTION"]]))))#np.abs(float(line[d_["FANT_TARGET"]])- float(line[d_["FANT_PREDICTION"]])))
+    y_2.append((float(line) - preds_[id_]))#np.abs(float(line[d_["FANT_TARGET"]])- preds_[id_]))
+    z_2.append((float(line) - float(valid_[id_][d_["FANT_PREDICTION"]])))#np.abs(float(line[d_["FANT_TARGET"]])- float(line[d_["FANT_PREDICTION"]])))
 
 
     y_3.append(np.abs(float(line)- preds_[id_])/(preds_[id_]))

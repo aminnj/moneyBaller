@@ -1,4 +1,4 @@
-#Id,Position,First_Name,Last_Name,FPPG,Played,Salary,Game,Team,Opponent
+#Id,Position,First_Name,Last_Name,FPPG,Played,Salary,Game,Team,Opponent,Injury_Indicator,Injury Details,1,2
 14619-12362,C,DeMarcus,Cousins,46.7225,40,11000,SAC@BKN,SAC,BKN
 14619-9488,SF,LeBron,James,44.1361702128,47,10200,BOS@CLE,CLE,BOS
 14619-12332,PG,John,Wall,41.2127659574,47,9900,PHI@WAS,WAS,PHI

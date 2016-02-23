@@ -55,8 +55,10 @@ class Load_Games:
             return_dict["REST"]              = len(headers)+len(avg_strings) + 1
             return_dict["FANDUEL_SALARY"]    = len(headers)+len(avg_strings) + 2
             return_dict["DRAFTKINGS_SALARY"] = len(headers)+len(avg_strings) + 3
-            return_dict["FANT_PREDICTION"]   = len(headers)+len(avg_strings) + 4
-            return_dict["POSITION"]        = len(headers)+len(avg_strings) + 5
+            return_dict["MIN_PRED"]          = len(headers)+len(avg_strings) + 4
+            return_dict["INJURY"]            = len(headers)+len(avg_strings) + 5
+            return_dict["FANT_PREDICTION"]   = len(headers)+len(avg_strings) + 6
+            return_dict["POSITION"]        = len(headers)+len(avg_strings) + 7
             #return_dict["POSITION_2"]          = len(headers)+len(avg_strings) + 6
 
         return return_dict
@@ -149,8 +151,10 @@ class Load_Games:
                             continue
                         p_temp                             = np.append(p_init[p_init[:,p_d['GAME_DATE']] == g],key_s2['fanduel']['Salary'])
                         p_temp                             = np.append(p_temp,key_s2['draftkings']['Salary'])
+                        p_temp                             = np.append(p_temp,key_s2['fanduel']['Proj_Mins'])
+                        p_temp                             = np.append(p_temp,key_s2['fanduel']['Injury_status'])
                         p_temp                             = np.append(p_temp,key_s2['fanduel']['Default_Proj_Score'])
-                        p_temp                             = np.append(p_temp,self.map(key_s2['fanduel']['truePos']))
+                        p_temp                             = np.append(p_temp,self.map(key_s2['fanduel']['PlayerPos']))
                         if len(p_final) == 0:
                             p_final = np.array(p_temp)
                         else:

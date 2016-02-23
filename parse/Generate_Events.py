@@ -24,12 +24,12 @@ g_vars = np.append(np.append(['AVG_' + s + "_SEL" for s in np.array(m.t_inclusiv
                              ['AVG_' + s + "_OPP" for s in np.array(m.t_inclusive).astype(str)]),
                              ["AVG_" + str(s) + "_" +"POSITION_OPP" for s in m.t_fint])
 
-p_vars = [['REST'],['FANDUEL_SALARY'],['DRAFTKINGS_SALARY'],['MATCHUP'],['FANT_PREDICTION'],['POSITION'],['FANT_TARGET'],['FANT']]
+p_vars = [['REST'],['FANDUEL_SALARY'],['DRAFTKINGS_SALARY'],['MATCHUP'],['FANT_PREDICTION'],['POSITION'],['MIN_PRED'] ,['FANT_TARGET']]
 d_ = gen_key(g_vars,p_vars,intervals)
 
 print sorted(d_.items(), key=operator.itemgetter(1))
 
-p_ = [p_d['REST'],p_d['FANDUEL_SALARY'],p_d['DRAFTKINGS_SALARY'],p_d['MATCHUP'],p_d["FANT_PREDICTION"],p_d["POSITION"],p_d['FANT_TARGET'],p_d['FANT']]
+p_ = [p_d['REST'],p_d['FANDUEL_SALARY'],p_d['DRAFTKINGS_SALARY'],p_d['MATCHUP'],p_d["FANT_PREDICTION"],p_d["POSITION"],p_d['MIN_PRED'] ,p_d['FANT_TARGET']]
 
 
 for t_name in np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str)):
@@ -56,7 +56,7 @@ for t_name in np.unique(teams[:,t_d['TEAM_NAME_SEL']].astype(str)):
 
             p_info.append(str(player[p_d['PLAYER_NAME']]))
             p_info.append(str(player[p_d['GAME_DATE']]))
-
+            p_info.append(str(player[p_d['INJURY']]))
             events.append(event)
             lookup.append(p_info)
 
@@ -71,4 +71,4 @@ events        = events[events[:,d_['FANT_TARGET']].astype(float) == events[:,d_[
 head = ''
 for line in sorted(d_.items(), key=operator.itemgetter(1)): head = head + str(line[0]) + ','
 np.savetxt('../data/parsed/events.csv',events.astype(float),delimiter=',',header = head)
-np.savetxt('../data/parsed/events_lookup.csv',lookup,delimiter=',',header = 'PLAYER_NAME,GAME_DATE',fmt="%s")
+np.savetxt('../data/parsed/events_lookup.csv',lookup,delimiter=',',header = 'PLAYER_NAME,GAME_DATE,INJURY',fmt="%s")
